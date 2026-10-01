@@ -1,0 +1,35 @@
+name: ONNX CPU validation
+on:
+  push:
+    branches: [work/onnx-best200-20261001]
+    paths: ['.github/workflows/onnx-cpu-validation.yml']
+  workflow_dispatch:
+permissions:
+  contents: read
+jobs:
+  prepare-offline-verification:
+    runs-on: ubuntu-24.04
+    timeout-minutes: 15
+    steps:
+      - uses: actions/checkout@v4
+        with:
+          persist-credentials: false
+      - uses: actions/setup-python@v5
+        with:
+          python-version: '3.13'
+      - name: Prepare public dependencies for offline CPU verification
+        run: |
+          mkdir -p verification-dependencies/wheels verification-dependencies/upstream
+          python -m pip wheel --wheel-dir verification-dependencies/wheels onnx==1.23.1 onnxruntime==1.30.0 onnxscript beartype==0.22.9 jaxtyping==0.3.11 ruff ty omegaconf
+          python -m pip download --no-deps --only-binary=:all: --dest verification-dependencies/wheels transformers timm schedulefree
+          curl -fL --retry 3 https://raw.githubusercontent.com/state-spaces/mamba/e9594ce1c732d97440f0332fdc43170a2294dbfa/tests/ops/triton/test_mamba3_siso.py -o verification-dependencies/upstream/test_mamba3_siso.py
+          curl -fL --retry 3 https://raw.githubusercontent.com/state-spaces/mamba/e9594ce1c732d97440f0332fdc43170a2294dbfa/mamba_ssm/modules/mamba3.py -o verification-dependencies/upstream/mamba3.py
+          curl -fL --retry 3 https://github.com/microsoft/onnxruntime/releases/download/v1.30.0/onnxruntime-linux-x64-1.30.0.tgz -o verification-dependencies/onnxruntime-linux-x64-1.30.0.tgz
+          find verification-dependencies -type f -print0 | sort -z | xargs -0 sha256sum > verification-dependencies/SHA256SUMS
+      - uses: actions/upload-artifact@v4
+        if: always()
+        with:
+          name: onnx-offline-verification-dependencies
+          path: verification-dependencies/
+          retention-days: 7
+          if-no-files-found: error
