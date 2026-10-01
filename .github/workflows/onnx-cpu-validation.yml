@@ -7,7 +7,32 @@ on:
 permissions:
   contents: read
 jobs:
-  prepare-offline-verification:
+  locked-baseline-quality:
+    runs-on: ubuntu-24.04
+    timeout-minutes: 25
+    steps:
+      - uses: actions/checkout@v4
+        with:
+          persist-credentials: false
+      - uses: astral-sh/setup-uv@v6
+      - name: Fetch the pinned native library
+        run: git submodule update --init --recursive third_party/visionMamba3
+      - name: Verify locked baseline environment
+        run: |
+          mkdir -p quality-evidence
+          uv sync --locked --extra onnx --python 3.12
+          uv lock --check > quality-evidence/uv-lock-check.txt 2>&1
+          uv run --locked --extra onnx pytest -q > quality-evidence/pytest.txt 2>&1
+          uv run --locked --extra onnx ty check > quality-evidence/ty.txt 2>&1
+          uv run --locked --extra onnx python -c 'import sys, torch, numpy; print(sys.version); print(torch.__version__); print(numpy.__version__)' > quality-evidence/versions.txt
+      - uses: actions/upload-artifact@v4
+        if: always()
+        with:
+          name: locked-baseline-quality
+          path: quality-evidence/
+          retention-days: 7
+          if-no-files-found: warn
+  prepare-native-imports:
     runs-on: ubuntu-24.04
     timeout-minutes: 15
     steps:
@@ -17,19 +42,17 @@ jobs:
       - uses: actions/setup-python@v5
         with:
           python-version: '3.13'
-      - name: Prepare public dependencies for offline CPU verification
+      - name: Prepare pinned source and offline wheels
         run: |
-          mkdir -p verification-dependencies/wheels verification-dependencies/upstream
-          python -m pip wheel --wheel-dir verification-dependencies/wheels onnx==1.23.1 onnxruntime==1.30.0 onnxscript beartype==0.22.9 jaxtyping==0.3.11 ruff ty omegaconf
-          python -m pip download --no-deps --only-binary=:all: --dest verification-dependencies/wheels transformers timm schedulefree
-          curl -fL --retry 3 https://raw.githubusercontent.com/state-spaces/mamba/e9594ce1c732d97440f0332fdc43170a2294dbfa/tests/ops/triton/test_mamba3_siso.py -o verification-dependencies/upstream/test_mamba3_siso.py
-          curl -fL --retry 3 https://raw.githubusercontent.com/state-spaces/mamba/e9594ce1c732d97440f0332fdc43170a2294dbfa/mamba_ssm/modules/mamba3.py -o verification-dependencies/upstream/mamba3.py
-          curl -fL --retry 3 https://github.com/microsoft/onnxruntime/releases/download/v1.30.0/onnxruntime-linux-x64-1.30.0.tgz -o verification-dependencies/onnxruntime-linux-x64-1.30.0.tgz
-          find verification-dependencies -type f -print0 | sort -z | xargs -0 sha256sum > verification-dependencies/SHA256SUMS
+          mkdir -p native-import-dependencies/wheels
+          git submodule update --init --recursive third_party/visionMamba3
+          tar --exclude=.git -czf native-import-dependencies/visionmamba3-upstream.tgz -C third_party visionMamba3
+          python -m pip download --no-deps --only-binary=:all: --dest native-import-dependencies/wheels ruff==0.15.20 triton==3.7.1
+          find native-import-dependencies -type f -print0 | sort -z | xargs -0 sha256sum > native-import-dependencies/SHA256SUMS
       - uses: actions/upload-artifact@v4
         if: always()
         with:
-          name: onnx-offline-verification-dependencies
-          path: verification-dependencies/
+          name: native-import-dependencies
+          path: native-import-dependencies/
           retention-days: 7
           if-no-files-found: error
