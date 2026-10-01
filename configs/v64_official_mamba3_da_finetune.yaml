@@ -10,6 +10,7 @@ data:
 train:
   out_dir: result/v64_official_mamba3_da_finetune
   init_best_from: result/v64_official_mamba3_cache_phase
+  val_every: 10
   amuse:
     muon_lr: 0.0005
     aux_lr: 0.00005

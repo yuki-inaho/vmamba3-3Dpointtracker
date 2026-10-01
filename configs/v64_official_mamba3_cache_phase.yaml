@@ -17,6 +17,7 @@ data:
     validation_state_from: result/v64_amuse/growing_pool.json
 train:
   out_dir: result/v64_official_mamba3_cache_phase
+  val_every: 10
   # Lower Muon LR for the imported mixers; this is transfer learning from text
   # to 3D trajectories, not a pretrained tracking model.
   amuse:

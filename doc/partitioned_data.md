@@ -343,6 +343,11 @@ uv run python scripts/train_v64_staged.py \
 新runは`result/v64_official_mamba3_cache_phase/`と
 `result/v64_official_mamba3_da_finetune/`へ保存します。元runとcheckpointは保全します。
 両段階のheldoutは`result/v64_amuse/growing_pool.json`から完全に同じ15本を継承します。
+公式Mamba-3用の両設定は`train.val_every: 10`で、10更新ごとに検証とEarly stopping判定を
+行います。`early_stop_min_delta: 0.001`を超える改善がない状態が、第1段階では5回
+（50更新）、第2段階では3回（30更新）続くと停止します。改善時は待ち回数を0へ戻します。
+検証間隔を変更して再開する場合も、同じ出力先のlatest checkpointからoptimizer・処理clip数・
+Early stoppingの状態を引き継ぎます。
 
 第1段階は`fixed_window_seed: 42`でclipごとの8-frame時間窓を固定し、query選択は毎回変えられます。
 最初に全ready trainのDINO/forward-backward flowをGPU batchでprewarmし、生成が終わってから
