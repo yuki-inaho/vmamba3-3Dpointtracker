@@ -58,10 +58,13 @@ class DINOv2Encoder(nn.Module):
         model_name: str = "facebook/dinov2-small",
         image_size: int = 448,
         fuse_layers: list[int] | None = None,
+        revision: str | None = None,
     ) -> None:
         super().__init__()
         from transformers import AutoModel
-        self.backbone = AutoModel.from_pretrained(model_name)
+        # Deployment can pin an immutable revision; training keeps its existing default.
+        self.backbone = (AutoModel.from_pretrained(model_name, revision=revision)
+                         if revision is not None else AutoModel.from_pretrained(model_name))
         self.backbone.eval()
         for p in self.backbone.parameters():
             p.requires_grad = False

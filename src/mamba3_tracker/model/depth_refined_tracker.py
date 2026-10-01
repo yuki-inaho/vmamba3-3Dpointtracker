@@ -178,6 +178,7 @@ class Mamba3V35Refiner(nn.Module):
         temporal_mixer: str = "vssd_cross",
         official_mamba3_bidirectional: bool = True,
         official_mamba3_track_chunk: int = 128,
+        dino_revision: str | None = None,
     ) -> None:
         super().__init__()
         self.dim = dim
@@ -212,7 +213,8 @@ class Mamba3V35Refiner(nn.Module):
         else:
             from .dino_encoder import DINOv2Encoder
 
-            self.dino = DINOv2Encoder(model_name=dino_model, image_size=dino_image_size)
+            self.dino = DINOv2Encoder(model_name=dino_model, image_size=dino_image_size,
+                                       revision=dino_revision)
         self.feat_proj = nn.Linear(self.dino.dim, d_proj)
 
         # Input: [ray_x, ray_y, z/z_ref, vis] + depth_patch(k²) + dino_feat(d_proj)

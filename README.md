@@ -228,3 +228,12 @@ make -C doc/vmamba3_3dpointtrack          # vmamba3_3dpointtrack.pdf
 ## License
 
 MIT. See [LICENSE](LICENSE). Submodules and downloaded weights and data keep their own licenses.
+
+## best200 refiner: ONNX / C++ CPU inference
+
+The actual best200 refiner has a standard-operator FP32 ONNX deployment path, a
+PyTorch-free CPU inference environment, and a C++ ONNX Runtime runner. See
+[the implementation, commands and verification record](docs/onnx_best200_cpu_20261001.md).
+This is a **refiner-only** deployment: DINO features, optical-flow tracks and
+metric depth remain external inputs. Native CUDA/BF16 accuracy on the fixed nine
+clips is still **unverified**, not implied by the CPU portability tests.

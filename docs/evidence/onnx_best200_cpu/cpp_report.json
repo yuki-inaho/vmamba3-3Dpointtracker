@@ -1,0 +1,405 @@
+{
+  "success": true,
+  "source_checkpoint_sha256": "bcddf045311b76a91bc772e35901acbdb99f397b752ee0ba4beacb3fb1ded5f4",
+  "onnx_sha256": "cd9c4f84859589796fdb50e22ec6d736cb421d3e75f268ab16b58eeb08009043",
+  "binary_sha256": "b7dce203d2b27b72bf93ed93d588e972ba9d631db3461403336d1114f1d53acc",
+  "provider": "CPUExecutionProvider",
+  "scope": "actual trained refiner; synthetic inputs; not 9-clip task accuracy",
+  "positive_cases": [
+    {
+      "B": 1,
+      "F": 1,
+      "N": 1,
+      "depth_shape": [
+        11,
+        17
+      ],
+      "chunk": 1,
+      "max_abs_error_vs_portable_fp32": {
+        "xyz": 2.86102294921875e-06,
+        "uv_refined": 0.0,
+        "vis_logits": 1.564621925354004e-07,
+        "delta_uv": 1.862645149230957e-09
+      },
+      "max_abs_error_vs_python_ort": {
+        "xyz": 0.0,
+        "uv_refined": 0.0,
+        "vis_logits": 0.0,
+        "delta_uv": 0.0
+      },
+      "all_finite": true,
+      "process": {
+        "success": true,
+        "provider": "CPUExecutionProvider",
+        "runtime": "1.30.0",
+        "batch": 1,
+        "frames": 1,
+        "tracks": 1,
+        "track_chunk": 1,
+        "inference_seconds": 0.004004
+      }
+    },
+    {
+      "B": 1,
+      "F": 1,
+      "N": 1,
+      "depth_shape": [
+        11,
+        17
+      ],
+      "chunk": 2,
+      "max_abs_error_vs_portable_fp32": {
+        "xyz": 2.86102294921875e-06,
+        "uv_refined": 0.0,
+        "vis_logits": 1.564621925354004e-07,
+        "delta_uv": 1.862645149230957e-09
+      },
+      "max_abs_error_vs_python_ort": {
+        "xyz": 0.0,
+        "uv_refined": 0.0,
+        "vis_logits": 0.0,
+        "delta_uv": 0.0
+      },
+      "all_finite": true,
+      "process": {
+        "success": true,
+        "provider": "CPUExecutionProvider",
+        "runtime": "1.30.0",
+        "batch": 1,
+        "frames": 1,
+        "tracks": 1,
+        "track_chunk": 2,
+        "inference_seconds": 0.004127
+      }
+    },
+    {
+      "B": 1,
+      "F": 8,
+      "N": 7,
+      "depth_shape": [
+        32,
+        48
+      ],
+      "chunk": 1,
+      "max_abs_error_vs_portable_fp32": {
+        "xyz": 2.384185791015625e-06,
+        "uv_refined": 0.0,
+        "vis_logits": 4.2282044887542725e-07,
+        "delta_uv": 2.9802322387695312e-08
+      },
+      "max_abs_error_vs_python_ort": {
+        "xyz": 0.0,
+        "uv_refined": 0.0,
+        "vis_logits": 0.0,
+        "delta_uv": 0.0
+      },
+      "all_finite": true,
+      "process": {
+        "success": true,
+        "provider": "CPUExecutionProvider",
+        "runtime": "1.30.0",
+        "batch": 1,
+        "frames": 8,
+        "tracks": 7,
+        "track_chunk": 1,
+        "inference_seconds": 0.034855
+      }
+    },
+    {
+      "B": 1,
+      "F": 8,
+      "N": 7,
+      "depth_shape": [
+        32,
+        48
+      ],
+      "chunk": 2,
+      "max_abs_error_vs_portable_fp32": {
+        "xyz": 2.384185791015625e-06,
+        "uv_refined": 0.0,
+        "vis_logits": 4.2282044887542725e-07,
+        "delta_uv": 2.9802322387695312e-08
+      },
+      "max_abs_error_vs_python_ort": {
+        "xyz": 0.0,
+        "uv_refined": 0.0,
+        "vis_logits": 0.0,
+        "delta_uv": 0.0
+      },
+      "all_finite": true,
+      "process": {
+        "success": true,
+        "provider": "CPUExecutionProvider",
+        "runtime": "1.30.0",
+        "batch": 1,
+        "frames": 8,
+        "tracks": 7,
+        "track_chunk": 2,
+        "inference_seconds": 0.018807
+      }
+    },
+    {
+      "B": 1,
+      "F": 8,
+      "N": 7,
+      "depth_shape": [
+        32,
+        48
+      ],
+      "chunk": 7,
+      "max_abs_error_vs_portable_fp32": {
+        "xyz": 2.384185791015625e-06,
+        "uv_refined": 0.0,
+        "vis_logits": 4.2282044887542725e-07,
+        "delta_uv": 2.9802322387695312e-08
+      },
+      "max_abs_error_vs_python_ort": {
+        "xyz": 0.0,
+        "uv_refined": 0.0,
+        "vis_logits": 0.0,
+        "delta_uv": 0.0
+      },
+      "all_finite": true,
+      "process": {
+        "success": true,
+        "provider": "CPUExecutionProvider",
+        "runtime": "1.30.0",
+        "batch": 1,
+        "frames": 8,
+        "tracks": 7,
+        "track_chunk": 7,
+        "inference_seconds": 0.021135
+      }
+    },
+    {
+      "B": 2,
+      "F": 13,
+      "N": 3,
+      "depth_shape": [
+        19,
+        23
+      ],
+      "chunk": 1,
+      "max_abs_error_vs_portable_fp32": {
+        "xyz": 7.152557373046875e-06,
+        "uv_refined": 0.0,
+        "vis_logits": 5.960464477539062e-07,
+        "delta_uv": 3.4458935260772705e-08
+      },
+      "max_abs_error_vs_python_ort": {
+        "xyz": 0.0,
+        "uv_refined": 0.0,
+        "vis_logits": 0.0,
+        "delta_uv": 0.0
+      },
+      "all_finite": true,
+      "process": {
+        "success": true,
+        "provider": "CPUExecutionProvider",
+        "runtime": "1.30.0",
+        "batch": 2,
+        "frames": 13,
+        "tracks": 3,
+        "track_chunk": 1,
+        "inference_seconds": 0.034421
+      }
+    },
+    {
+      "B": 2,
+      "F": 13,
+      "N": 3,
+      "depth_shape": [
+        19,
+        23
+      ],
+      "chunk": 2,
+      "max_abs_error_vs_portable_fp32": {
+        "xyz": 7.152557373046875e-06,
+        "uv_refined": 0.0,
+        "vis_logits": 5.960464477539062e-07,
+        "delta_uv": 3.4458935260772705e-08
+      },
+      "max_abs_error_vs_python_ort": {
+        "xyz": 0.0,
+        "uv_refined": 0.0,
+        "vis_logits": 0.0,
+        "delta_uv": 0.0
+      },
+      "all_finite": true,
+      "process": {
+        "success": true,
+        "provider": "CPUExecutionProvider",
+        "runtime": "1.30.0",
+        "batch": 2,
+        "frames": 13,
+        "tracks": 3,
+        "track_chunk": 2,
+        "inference_seconds": 0.023633
+      }
+    },
+    {
+      "B": 2,
+      "F": 13,
+      "N": 3,
+      "depth_shape": [
+        19,
+        23
+      ],
+      "chunk": 3,
+      "max_abs_error_vs_portable_fp32": {
+        "xyz": 7.152557373046875e-06,
+        "uv_refined": 0.0,
+        "vis_logits": 5.960464477539062e-07,
+        "delta_uv": 3.4458935260772705e-08
+      },
+      "max_abs_error_vs_python_ort": {
+        "xyz": 0.0,
+        "uv_refined": 0.0,
+        "vis_logits": 0.0,
+        "delta_uv": 0.0
+      },
+      "all_finite": true,
+      "process": {
+        "success": true,
+        "provider": "CPUExecutionProvider",
+        "runtime": "1.30.0",
+        "batch": 2,
+        "frames": 13,
+        "tracks": 3,
+        "track_chunk": 3,
+        "inference_seconds": 0.018991
+      }
+    },
+    {
+      "B": 1,
+      "F": 128,
+      "N": 2,
+      "depth_shape": [
+        17,
+        23
+      ],
+      "chunk": 1,
+      "max_abs_error_vs_portable_fp32": {
+        "xyz": 4.291534423828125e-06,
+        "uv_refined": 9.5367431640625e-07,
+        "vis_logits": 4.76837158203125e-07,
+        "delta_uv": 4.936009645462036e-08
+      },
+      "max_abs_error_vs_python_ort": {
+        "xyz": 0.0,
+        "uv_refined": 0.0,
+        "vis_logits": 0.0,
+        "delta_uv": 0.0
+      },
+      "all_finite": true,
+      "process": {
+        "success": true,
+        "provider": "CPUExecutionProvider",
+        "runtime": "1.30.0",
+        "batch": 1,
+        "frames": 128,
+        "tracks": 2,
+        "track_chunk": 1,
+        "inference_seconds": 0.123098
+      }
+    },
+    {
+      "B": 1,
+      "F": 128,
+      "N": 2,
+      "depth_shape": [
+        17,
+        23
+      ],
+      "chunk": 2,
+      "max_abs_error_vs_portable_fp32": {
+        "xyz": 4.291534423828125e-06,
+        "uv_refined": 9.5367431640625e-07,
+        "vis_logits": 4.76837158203125e-07,
+        "delta_uv": 4.936009645462036e-08
+      },
+      "max_abs_error_vs_python_ort": {
+        "xyz": 0.0,
+        "uv_refined": 0.0,
+        "vis_logits": 0.0,
+        "delta_uv": 0.0
+      },
+      "all_finite": true,
+      "process": {
+        "success": true,
+        "provider": "CPUExecutionProvider",
+        "runtime": "1.30.0",
+        "batch": 1,
+        "frames": 128,
+        "tracks": 2,
+        "track_chunk": 2,
+        "inference_seconds": 0.069851
+      }
+    }
+  ],
+  "rejected_invalid_cases": [
+    {
+      "case": "missing_input",
+      "exit_code": 1,
+      "stderr": "refiner_runner: Cannot read input: depth_map.npy"
+    },
+    {
+      "case": "nan",
+      "exit_code": 1,
+      "stderr": "refiner_runner: Nonfinite input: ray.npy"
+    },
+    {
+      "case": "wrong_z_ref",
+      "exit_code": 1,
+      "stderr": "refiner_runner: z_ref must equal full-input lower median plus 1e-6"
+    },
+    {
+      "case": "float64",
+      "exit_code": 1,
+      "stderr": "refiner_runner: Only little-endian float32 NPY tensors are supported"
+    },
+    {
+      "case": "fortran",
+      "exit_code": 1,
+      "stderr": "refiner_runner: Fortran-order arrays are not supported"
+    },
+    {
+      "case": "nonbinary_vis",
+      "exit_code": 1,
+      "stderr": "refiner_runner: visibility must be binary"
+    },
+    {
+      "case": "truncated",
+      "exit_code": 1,
+      "stderr": "refiner_runner: NPY payload length does not match shape"
+    },
+    {
+      "case": "wrong_shape",
+      "exit_code": 1,
+      "stderr": "refiner_runner: Invalid shape: uv"
+    },
+    {
+      "case": "zero_chunk",
+      "exit_code": 1,
+      "stderr": "refiner_runner: Arguments must be positive integers"
+    },
+    {
+      "case": "zero_threads",
+      "exit_code": 1,
+      "stderr": "refiner_runner: Arguments must be positive integers"
+    },
+    {
+      "case": "bad_intrinsics",
+      "exit_code": 1,
+      "stderr": "refiner_runner: Only positive-focal, unskewed pinhole intrinsics supported"
+    },
+    {
+      "case": "workspace_guard",
+      "exit_code": 1,
+      "stderr": "refiner_runner: Attention workspace exceeds budget; reduce track chunk, not frames"
+    }
+  ],
+  "rtol": 0.0002,
+  "atol": 5e-05,
+  "task_accuracy_verified": false
+}

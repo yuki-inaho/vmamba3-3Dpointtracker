@@ -1,0 +1,77 @@
+{
+  "ready": false,
+  "blockers": [
+    "CUDA unavailable: the unchanged native Triton/BF16 path requires CUDA",
+    "Missing native dependency: third_party/WAFT/model.py",
+    "Missing native dependency: third_party/WAFT/ckpts/waft_a1_recommended.pth",
+    "Missing data: adt/Lite_release_recognition_GreenDecorationTall_seq031_6.npz",
+    "Missing depth: adt/Lite_release_recognition_GreenDecorationTall_seq031_6.npz",
+    "Missing data: adt/Apartment_release_decoration_seq138_6.npz",
+    "Missing depth: adt/Apartment_release_decoration_seq138_6.npz",
+    "Missing data: adt/Apartment_release_multiskeleton_party_seq122_5.npz",
+    "Missing depth: adt/Apartment_release_multiskeleton_party_seq122_5.npz",
+    "Missing data: drivetrack/tapvid3d_9142545919543484617_86_000_106_000_2_5AKc-TYQochsSWXpv376cA.npz",
+    "Missing depth: drivetrack/tapvid3d_9142545919543484617_86_000_106_000_2_5AKc-TYQochsSWXpv376cA.npz",
+    "Missing data: drivetrack/tapvid3d_2681180680221317256_1144_000_1164_000_2_erT5IMWqaVRCzF6oN66E7Q.npz",
+    "Missing depth: drivetrack/tapvid3d_2681180680221317256_1144_000_1164_000_2_erT5IMWqaVRCzF6oN66E7Q.npz",
+    "Missing data: drivetrack/tapvid3d_10940952441434390507_1888_710_1908_710_2_ktWWj6EBhJZaj0IQHjSjZw.npz",
+    "Missing depth: drivetrack/tapvid3d_10940952441434390507_1888_710_1908_710_2_ktWWj6EBhJZaj0IQHjSjZw.npz",
+    "Missing data: pstudio/basketball_5.npz",
+    "Missing depth: pstudio/basketball_5.npz",
+    "Missing data: pstudio/softball_25.npz",
+    "Missing depth: pstudio/softball_25.npz",
+    "Missing data: pstudio/boxes_22.npz",
+    "Missing depth: pstudio/boxes_22.npz",
+    "Full input frame coverage is 0, expected 1485"
+  ],
+  "inputs": [
+    {
+      "clip": "adt/Lite_release_recognition_GreenDecorationTall_seq031_6.npz",
+      "data_present": false,
+      "depth_present": false
+    },
+    {
+      "clip": "adt/Apartment_release_decoration_seq138_6.npz",
+      "data_present": false,
+      "depth_present": false
+    },
+    {
+      "clip": "adt/Apartment_release_multiskeleton_party_seq122_5.npz",
+      "data_present": false,
+      "depth_present": false
+    },
+    {
+      "clip": "drivetrack/tapvid3d_9142545919543484617_86_000_106_000_2_5AKc-TYQochsSWXpv376cA.npz",
+      "data_present": false,
+      "depth_present": false
+    },
+    {
+      "clip": "drivetrack/tapvid3d_2681180680221317256_1144_000_1164_000_2_erT5IMWqaVRCzF6oN66E7Q.npz",
+      "data_present": false,
+      "depth_present": false
+    },
+    {
+      "clip": "drivetrack/tapvid3d_10940952441434390507_1888_710_1908_710_2_ktWWj6EBhJZaj0IQHjSjZw.npz",
+      "data_present": false,
+      "depth_present": false
+    },
+    {
+      "clip": "pstudio/basketball_5.npz",
+      "data_present": false,
+      "depth_present": false
+    },
+    {
+      "clip": "pstudio/softball_25.npz",
+      "data_present": false,
+      "depth_present": false
+    },
+    {
+      "clip": "pstudio/boxes_22.npz",
+      "data_present": false,
+      "depth_present": false
+    }
+  ],
+  "available_valid_frames": 0,
+  "expected_frames": 1485,
+  "task_accuracy_verified": false
+}

@@ -1,0 +1,86 @@
+{
+  "success": true,
+  "scope": "CPU quality and refiner portability only",
+  "task_accuracy_verified": false,
+  "full_dod_satisfied": false,
+  "stages": [
+    {
+      "stage": "quality_tools",
+      "returncode": 0,
+      "passed": true
+    },
+    {
+      "stage": "lean_lock",
+      "returncode": 0,
+      "passed": true
+    },
+    {
+      "stage": "versions",
+      "returncode": 0,
+      "passed": true
+    },
+    {
+      "stage": "export",
+      "returncode": 0,
+      "passed": true
+    },
+    {
+      "stage": "cmake_configure",
+      "returncode": 0,
+      "passed": true
+    },
+    {
+      "stage": "cmake_build",
+      "returncode": 0,
+      "passed": true
+    },
+    {
+      "stage": "cmake_install",
+      "returncode": 0,
+      "passed": true
+    },
+    {
+      "stage": "cpp_verify",
+      "returncode": 0,
+      "passed": true
+    },
+    {
+      "stage": "python_no_torch",
+      "returncode": 0,
+      "passed": true
+    },
+    {
+      "stage": "lean_inference",
+      "returncode": 0,
+      "passed": true
+    },
+    {
+      "stage": "independent_runtime",
+      "returncode": 0,
+      "passed": true
+    },
+    {
+      "stage": "paired_preflight",
+      "returncode": 2,
+      "passed": true
+    }
+  ],
+  "checkpoint_sha256": "bcddf045311b76a91bc772e35901acbdb99f397b752ee0ba4beacb3fb1ded5f4",
+  "host": "Linux-6.17.0-1022-azure-x86_64-with-glibc2.39",
+  "root_lock_sha256": "259ade098c242f8b200cb907030ee76fa6bc9d85c91ffccc3b448647b02ae075",
+  "versions": {
+    "python": "3.12.3 (main, Aug 31 2026, 10:18:26) [GCC 13.3.0]",
+    "torch": "2.12.1+cu130",
+    "numpy": "1.26.4",
+    "onnx": "1.23.1",
+    "onnxruntime": "1.30.0",
+    "cuda_available": false
+  },
+  "elapsed_s": 33.75648959399999,
+  "onnx_sha256": "cd9c4f84859589796fdb50e22ec6d736cb421d3e75f268ab16b58eeb08009043",
+  "lean_lock_sha256": "b6c90f0bed74978ecd577ba8de6f8de75a191c8d43f06fbdaca6ac11dee4944e",
+  "checkpoint_unchanged": true,
+  "root_lock_unchanged": true,
+  "cpp_positive_cases": 10,
+  "cpp_rejected_invalid_cases": 12
+}
