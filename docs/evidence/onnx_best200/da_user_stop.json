@@ -1,0 +1,44 @@
+{
+  "stopped_at_utc": "2026-10-01T12:21:07.188514+00:00",
+  "reason": "user_selected_da_off_best200_as_final",
+  "saved_da_step": 30,
+  "saved_status": {
+    "step": 30,
+    "max_steps": 250,
+    "early_stop": {
+      "patience": 3,
+      "min_delta": 0.001,
+      "mode": "min",
+      "best": 0.10282776057720185,
+      "best_step": 0,
+      "since": 0,
+      "last_step": 30
+    },
+    "clip_budget": {
+      "limit": 4096,
+      "count": 912
+    },
+    "reason": "running",
+    "best_checkpoint": "best_0.pt",
+    "fixed_da": {
+      "epoch": 0,
+      "offset": 30,
+      "signature": "905a3714dc60c7d7d16c770f976d6997f305c303c76436e8ed7d9f4c53f38d22",
+      "patterns": 4,
+      "batch_size": 32,
+      "block_clips": 32,
+      "repeats": 2,
+      "seed": 0
+    },
+    "fixed_da_pattern_counts": {
+      "softer": 228,
+      "harder": 228,
+      "darker": 228,
+      "brighter": 228
+    },
+    "fixed_da_unique_clip_patterns": 456
+  },
+  "latest_checkpoint_preserved": true,
+  "da_code_preserved": true,
+  "selected_final_checkpoint": "result/v64_official_mamba3_cache_phase/best_200.pt"
+}

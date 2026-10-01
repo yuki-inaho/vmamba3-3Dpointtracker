@@ -2,7 +2,7 @@
 name = "vmamba3-3dpointtracker"
 version = "0.1.0"
 description = "3D point tracker: SEA-RAFT + DA3 depth + Mamba-3 SSM refiner"
-authors = [{ name = "Masahiro Ogawa", email = "masahiro.ogaw@gmail.com" }]
+authors = [{ name = "Masahiro Ogawa" }]
 requires-python = ">=3.11,<3.13"
 dependencies = [
     "visionmamba3",
@@ -40,6 +40,13 @@ dependencies = [
     "jaxtyping>=0.3.11",
 ]
 
+[project.optional-dependencies]
+onnx = [
+    "onnx>=1.19",
+    "onnxruntime>=1.23",
+    "onnxscript>=0.5",
+]
+
 [tool.uv.sources]
 visionmamba3 = { path = "third_party/visionMamba3", editable = true }
 
@@ -65,6 +72,9 @@ include = [
     "src/mamba3_tracker/data/synthetic.py",
     "src/mamba3_tracker/data/fixed_da.py",
     "src/mamba3_tracker/model/dino_encoder.py",
+    "src/mamba3_tracker/model/onnx_refiner.py",
+    "scripts/export_refiner_onnx.py",
+    "scripts/eval_onnx_refiner.py",
     "scripts/smoke_train_synthetic.py",
     "scripts/train_v64_staged.py",
     "tests/unit/test_profile_cache.py",
@@ -74,6 +84,7 @@ include = [
 # jaxtyping shape strings are runtime metadata, not Python forward references.
 "src/mamba3_tracker/train/profiling.py" = ["F722"]
 "src/mamba3_tracker/data/fixed_da.py" = ["F722"]
+"src/mamba3_tracker/model/onnx_refiner.py" = ["F722"]
 
 [dependency-groups]
 dev = [

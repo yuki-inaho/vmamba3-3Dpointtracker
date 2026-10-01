@@ -1,0 +1,69 @@
+{
+  "success": true,
+  "checkpoint_step": 200,
+  "checkpoint_sha256": "a004e267db0e12e09082682f5afaa02122a63eb425d4558f836f62bd0492af2b",
+  "file": "tracker_mamba3_daoff_best200.onnx",
+  "onnx_bytes": 32669266,
+  "onnx_sha256": "0a8bcc72d17c32bb5e4000c8fb03a84f397e9a5314cde8bc1e64beac6bcf148a",
+  "opset": 18,
+  "node_count": 1547,
+  "operator_domains": [
+    ""
+  ],
+  "tracker_tensors_loaded": 50,
+  "tracker_parameters": 8117988,
+  "all_tracker_weights_bitwise_equal": true,
+  "runtime": "1.30.0",
+  "providers": [
+    "CPUExecutionProvider"
+  ],
+  "verification": [
+    {
+      "batch": 1,
+      "frames": 1,
+      "tracks": 1,
+      "depth_shape": [
+        24,
+        32
+      ],
+      "max_abs_error": {
+        "xyz": 2.384185791015625e-07,
+        "uv_refined": 0.0,
+        "vis_logits": 5.587935447692871e-08,
+        "delta_uv": 2.5756889954209328e-09
+      }
+    },
+    {
+      "batch": 1,
+      "frames": 8,
+      "tracks": 7,
+      "depth_shape": [
+        32,
+        48
+      ],
+      "max_abs_error": {
+        "xyz": 2.384185791015625e-06,
+        "uv_refined": 0.0,
+        "vis_logits": 3.8743019104003906e-07,
+        "delta_uv": 2.60770320892334e-08
+      }
+    },
+    {
+      "batch": 2,
+      "frames": 13,
+      "tracks": 3,
+      "depth_shape": [
+        48,
+        32
+      ],
+      "max_abs_error": {
+        "xyz": 5.7220458984375e-06,
+        "uv_refined": 0.0,
+        "vis_logits": 4.637986421585083e-07,
+        "delta_uv": 3.3527612686157227e-08
+      }
+    }
+  ],
+  "elapsed_s": 1.7756835301406682,
+  "scope": "Synthetic ONNX-vs-portable-FP32 verification; task metrics are evaluated separately."
+}

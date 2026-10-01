@@ -1,0 +1,99 @@
+{
+  "recorded_at_utc": "2026-10-01T13:04:01.064063+00:00",
+  "base_commit": "fbaf7b205864e6966ae4bf3587d552316641e700",
+  "status": "unfinished ONNX prototype; synthetic verification passed, real-data comparison failed before metric aggregation",
+  "source_files": [
+    {
+      "path": "pyproject.toml",
+      "bytes": 2666,
+      "sha256": "abc4fb1c7f0ca4324780f3c0761e872a81810de6d541ffbf409e71a97e4fe71c"
+    },
+    {
+      "path": "uv.lock",
+      "bytes": 391783,
+      "sha256": "259ade098c242f8b200cb907030ee76fa6bc9d85c91ffccc3b448647b02ae075"
+    },
+    {
+      "path": "scripts/check_training_quality.sh",
+      "bytes": 654,
+      "sha256": "010abc463df755562360df7f08ee2cc5b0a7725544f32918da9069f2efdc0d1b"
+    },
+    {
+      "path": "scripts/export_refiner_onnx.py",
+      "bytes": 7368,
+      "sha256": "29b4af83391461101739e30e31bac642ca8e40031479704a034f44f95eb1bb9b"
+    },
+    {
+      "path": "scripts/eval_onnx_refiner.py",
+      "bytes": 9774,
+      "sha256": "3c38728404b06acd352d9391801edc2ef8c0f5b99373e7e24203b98add2c1ef9"
+    },
+    {
+      "path": "src/mamba3_tracker/model/onnx_refiner.py",
+      "bytes": 9277,
+      "sha256": "7d1469048bdee260abb22627e42dfb1c29d5b7cf5078c771f2c047604b09b94f"
+    },
+    {
+      "path": "tests/unit/test_onnx_refiner.py",
+      "bytes": 2804,
+      "sha256": "e9e02efa18ce6f1072a8d8c3e828418287ecfd1c4cce8f7e073d7a361bbd2750"
+    }
+  ],
+  "evidence": [
+    {
+      "source": "result/onnx_best200/export_report.json",
+      "source_sha256": "d0567f4e8cfb7bb0c80bc2608a1446e1e3024b563ae44ba7b9c505efe2f57c58",
+      "evidence_file": "export_report.json",
+      "evidence_sha256": "d0567f4e8cfb7bb0c80bc2608a1446e1e3024b563ae44ba7b9c505efe2f57c58",
+      "sanitization": "none"
+    },
+    {
+      "source": "result/onnx_best200/direct_export_attempt.json",
+      "source_sha256": "65efd3ddae9ae99be2fe9657d7f3b27320294fd66bbc41c79431293a4f00f481",
+      "evidence_file": "direct_export_attempt.json",
+      "evidence_sha256": "5a0829b139596c8a66478cbca474f35696fc21d345de0304e06a62c36967838a",
+      "sanitization": "ANSI terminal decorations removed; exception content retained"
+    },
+    {
+      "source": "result/v64_official_mamba3_da4_cached/user_stop.json",
+      "source_sha256": "752bcfd7902816b96cc25b65007776e56a61510a1105d96da3785a9df8c98cda",
+      "evidence_file": "da_user_stop.json",
+      "evidence_sha256": "752bcfd7902816b96cc25b65007776e56a61510a1105d96da3785a9df8c98cda",
+      "sanitization": "none"
+    }
+  ],
+  "dependencies": {
+    "onnx": "1.23.1",
+    "onnxruntime": "1.30.0",
+    "onnxscript": "0.7.2"
+  },
+  "quality_checks": {
+    "execution": "uv run --no-sync --extra onnx in the existing environment; quality launcher has a documented extra-selection issue",
+    "ruff": "passed on existing training-quality targets and ONNX files",
+    "ty": "passed",
+    "pytest": {
+      "passed": 59,
+      "elapsed_s": 3.38
+    },
+    "uv_lock_check": "passed"
+  },
+  "excluded_artifacts": {
+    "data_depth_cache": "external; existing preparation instructions in doc/partitioned_data.md",
+    "checkpoint": "existing GitHub release asset; see workdoc for SHA256",
+    "onnx": "regenerate with scripts/export_refiner_onnx.py; see export_report.json for SHA256",
+    "raw_logs_credentials": "excluded; sanitized failure evidence provided"
+  },
+  "known_gaps": [
+    "absolute metric-AJ computation missing in paired score",
+    "median-scaled intrinsics do not match existing 256px evaluation normalization",
+    "quality launcher omits optional ONNX extra",
+    "published PT omits frozen DINO backbone; paired native strict-load does not support this format yet",
+    "long-sequence and chunk equivalence verification pending",
+    "real-data 9-clip accuracy comparison incomplete"
+  ],
+  "privacy_review": {
+    "known_author_email_removed_from_pyproject": true,
+    "public_author_attribution_retained": true,
+    "raw_credentials_and_home_paths_excluded": true
+  }
+}
