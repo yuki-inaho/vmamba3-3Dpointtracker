@@ -254,10 +254,47 @@ cacheは `~/data/tapvid3d_frozen_cache/`、DINO最大2 GB・flow最大4 GBのLRU
 総データ予算で保存できない場合も学習はその入力を通常計算して続けます。
 TensorBoardの `cache/dino_hits`、`cache/flow_hits` とmissesで再利用を確認できます。
 
+固定入力の第1段階では、ユーザー許可により raw/depth を含む `~/data` 全体を約120 GBまで
+使えます。`configs/v64_amuse_cache_phase.yaml` はDINO 20 GB・flow 40 GBを上限にし、
+raw/depth/checkpointを消さず cache のLRUだけを退避します。通常の60 GB分割取得configの
+上限は変えません。
+
 高速方式では再利用率を上げるため **photometric augmentationを無効** にします。
 元recipeの `configs/v64_amuse.yaml` はaugmentationを保持します。両runは別out_dirへ保存し、
 高速方式を論文のAdamW・全データrecipeと同一の再現条件とは扱いません。
 DINOのtrainable multi-layer fusionにはこのcacheを使いません。
+
+## DAなしcache段階からDA付き微調整への引継ぎ
+
+固定入力の高速化だけを設定しても、DA付きrunをそのまま続ければ再利用できません。
+以下の runner は、停止済み `result/v64_amuse/latest.pt` を重みだけ読み込んで、第1段階を
+実行します。第1段階が early stopping・clip budget・steps のいずれかで正常終了した後、
+heldout loss 最良の `best_*.pt` を固定reference 9 clipで評価し、それが成功した場合にのみ
+DA付き第2段階を開始します。optimizer/AMUSE状態は段階ごとに新規なので、DAなしの探索状態を
+DA付き微調整へ誤って持ち込みません。
+
+```sh
+. scripts/cudnn_env.sh
+bash -ic 'uv run python scripts/train_v64_staged.py --data-root ~/data' \
+  > temp/v64_staged_train.log 2>&1 &
+
+# GPUを使わず、開始元・DA設定・引継ぎ先だけを検証する。
+uv run python scripts/train_v64_staged.py --dry-run
+```
+
+- 第1段階: `configs/v64_amuse_cache_phase.yaml` → `result/v64_amuse_cache_phase/`。
+  DAを切り、DINO本体とWAFTを凍結cacheから供給する。時間窓とquery選択は維持するため、
+  生フレームは同じでも監督サンプルを一種類に固定しない。
+- 評価: `result/v64_amuse_cache_phase/reference_eval/best_<step>/` に、9/150 clipの
+  `metrics.json` と `reference_progress.json` を保存する。paperの0.256との比較値ではなく、
+  段階間の同一reference監視値である。
+- 第2段階: `configs/v64_amuse_da_finetune.yaml` → `result/v64_amuse_da_finetune/`。
+  `init_best_from` は第1段階の `checkpoints.json` の首位だけを解決する。DA時は入力値が
+  変わるため persistent frozen cache を使わず、GPU cross-clip flow batchを使う。
+
+第1段階のprocessが非zero終了、評価が失敗、best checkpointが欠落した場合はrunnerが例外で
+終わり、第2段階は起動しません。中断後は同じrunnerを実行すれば第1段階の`latest.pt`から
+再開します。第2段階の結果を再計測するときは、学習終了後に同じreference manifestを渡します。
 
 ## GPUを活用した生成と学習の並行実行
 

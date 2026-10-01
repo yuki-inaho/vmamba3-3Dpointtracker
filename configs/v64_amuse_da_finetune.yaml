@@ -1,0 +1,77 @@
+# Phase 2: the runner resolves phase 1's held-out best, then enables DA.
+version: v35
+model:
+  two_pool: true
+  dim: 128
+  state_dim: 64
+  num_heads: 4
+  num_layers: 2
+  max_log_correction: 2.0
+  max_delta_uv: 2.0
+  patch_size: 5
+  d_proj: 64
+  dino_model: facebook/dinov3-vits16-pretrain-lvd1689m
+  dino_image_size: 448
+  image_size: 896
+flow:
+  source: waft_live
+  scale: -1
+  url: MemorySlices/Tartan-C-T-TSKH-spring540x960-M
+  cfg: third_party/SEA-RAFT/config/eval/spring-M.json
+  iters: 4
+  batch_size: 32
+  max_batch_size: 64
+  gpu_reserve_gb: 4
+  fb_alpha: 0.05
+  fb_beta: 1.0
+data:
+  reanchor_window: false
+  subsets: [pstudio, drivetrack, adt]
+  image_size: 896
+  num_tracks: 256
+  da3_depth_root: ~/data/tapvid3d_da3
+  photometric_augment: true
+  split:
+    source: official
+    n_val_monitor: 15
+    seed: 42
+    train_manifest: temp/tapvid3d_train_subset_manifest.json
+    growing: true
+    val_per_subset: 5
+    refresh_steps: 5
+train:
+  out_dir: result/v64_amuse_da_finetune
+  init_best_from: result/v64_amuse_cache_phase
+  steps: 250
+  clip_budget: 4096
+  warmup: 25
+  decay: 200
+  ckpt_every: 10
+  val_every: 64
+  log_every: 1
+  lr: 0.0003
+  weight_decay: 0.05
+  grad_clip: 1.0
+  batch: 32
+  bucket_batches: true
+  window: 8
+  amp: bf16
+  num_workers: 4
+  prefetch_factor: 1
+  cpu_threads: 8
+  seed: 0
+  optimizer: amuse
+  checkpoint_k: 3
+  early_stop_patience: 3
+  early_stop_min_delta: 0.001
+  amuse:
+    muon_lr: 0.02
+    aux_lr: 0.0003
+    beta1: 0.8
+    rho: 0.3
+    aux_update_type: adamw
+  val_clips: 15
+loss:
+  weights:
+    pos_3D: 1.0
+    reg_uv: 0.1

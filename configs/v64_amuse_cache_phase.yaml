@@ -1,0 +1,87 @@
+# Phase 1: cache frozen front-end outputs from unaugmented raw frames. DINO
+# fusion/projection and the 3D refiner remain trainable.
+version: v35
+model:
+  two_pool: true
+  dim: 128
+  state_dim: 64
+  num_heads: 4
+  num_layers: 2
+  max_log_correction: 2.0
+  max_delta_uv: 2.0
+  patch_size: 5
+  d_proj: 64
+  dino_model: facebook/dinov3-vits16-pretrain-lvd1689m
+  dino_image_size: 448
+  image_size: 896
+flow:
+  source: waft_live
+  scale: -1
+  url: MemorySlices/Tartan-C-T-TSKH-spring540x960-M
+  cfg: third_party/SEA-RAFT/config/eval/spring-M.json
+  iters: 4
+  fb_alpha: 0.05
+  fb_beta: 1.0
+data:
+  reanchor_window: false
+  subsets: [pstudio, drivetrack, adt]
+  image_size: 896
+  num_tracks: 256
+  da3_depth_root: ~/data/tapvid3d_da3
+  photometric_augment: false
+  split:
+    source: official
+    n_val_monitor: 15
+    seed: 42
+    train_manifest: temp/tapvid3d_train_subset_manifest.json
+    growing: true
+    val_per_subset: 5
+    refresh_steps: 5
+train:
+  out_dir: result/v64_amuse_cache_phase
+  init_ckpt: result/v64_amuse/latest.pt
+  steps: 800
+  clip_budget: 20000
+  warmup: 100
+  decay: 600
+  ckpt_every: 10
+  val_every: 100
+  log_every: 1
+  lr: 0.0003
+  weight_decay: 0.05
+  grad_clip: 1.0
+  batch: 32
+  bucket_batches: true
+  window: 8
+  amp: bf16
+  num_workers: 4
+  prefetch_factor: 1
+  cpu_threads: 8
+  seed: 0
+  optimizer: amuse
+  checkpoint_k: 3
+  early_stop_patience: 5
+  early_stop_min_delta: 0.001
+  amuse:
+    muon_lr: 0.02
+    aux_lr: 0.0003
+    beta1: 0.8
+    rho: 0.3
+    aux_update_type: adamw
+  val_clips: 15
+loss:
+  weights:
+    pos_3D: 1.0
+    reg_uv: 0.1
+frozen_cache:
+  enabled: true
+  root: ~/data/tapvid3d_frozen_cache
+  # The user approved a 120 GB total data+cache budget for this phase. Raw and
+  # DA3 data stay intact; the cache's own LRU is the only evictable content.
+  total_data_budget_gb: 120
+  dino_gb: 20
+  flow_gb: 40
+  flow_batch: 4
+  flow_max_batch: 8
+  dino_batch: 32
+  gpu_reserve_gb: 8

@@ -108,6 +108,42 @@ def _find_latest_ckpt(out_dir: Path) -> Path | None:
     return max(cands, key=lambda x: x[0])[1] if cands else None
 
 
+def _resolve_init_checkpoint(train_cfg: dict) -> Path | None:
+    """Resolve one direct warm-start checkpoint or a run's held-out best.
+
+    A staged run must not silently start phase two from ``latest.pt``: that can
+    be an over-fit final update. ``init_best_from`` reads the K-best manifest
+    written by CheckpointManager and chooses its rank-1 checkpoint.
+    """
+    direct = train_cfg.get("init_ckpt")
+    best_from = train_cfg.get("init_best_from")
+    if direct and best_from:
+        raise ValueError("train.init_ckpt and train.init_best_from are mutually exclusive")
+    if direct:
+        path = Path(str(direct)).expanduser()
+        if not path.is_file():
+            raise FileNotFoundError(f"train.init_ckpt does not exist: {path}")
+        return path
+    if not best_from:
+        return None
+    run_dir = Path(str(best_from)).expanduser()
+    manifest = run_dir / "checkpoints.json"
+    if not manifest.is_file():
+        raise FileNotFoundError(
+            f"train.init_best_from needs {manifest}; phase one has not produced a best checkpoint"
+        )
+    try:
+        best = json.loads(manifest.read_text()).get("best", [])
+    except json.JSONDecodeError as exc:
+        raise ValueError(f"invalid checkpoint manifest: {manifest}") from exc
+    if not best or not best[0].get("path"):
+        raise ValueError(f"checkpoint manifest has no held-out best: {manifest}")
+    path = run_dir / str(best[0]["path"])
+    if not path.is_file():
+        raise FileNotFoundError(f"held-out best listed by {manifest} is missing: {path}")
+    return path
+
+
 def _loss_to_dict(out: TrackingLossOutput) -> dict[str, float]:
     return {
         "total": float(out.total.item()),
@@ -1021,7 +1057,8 @@ def main() -> int:
         dino_cache = FrozenTensorCache(
             cache_root / "dino", f"dino:{fingerprint}:{model.dino.image_size}",
             max_bytes=float(frozen_cache_cfg.get("dino_gb", 2)) * 1e9,
-            data_root=storage_root, total_bytes=60e9,
+            data_root=storage_root,
+            total_bytes=float(frozen_cache_cfg.get("total_data_budget_gb", 60)) * 1e9,
         )
         model.dino.configure_cache(dino_cache)
         # Include auxiliary depth-backbone weights as actually loaded, and
@@ -1031,7 +1068,8 @@ def main() -> int:
         flow_cache = FrozenTensorCache(
             cache_root / "flow", f"waft:{flow_fingerprint}:{json.dumps([architecture, flow_cfg], sort_keys=True)}",
             max_bytes=float(frozen_cache_cfg.get("flow_gb", 4)) * 1e9,
-            data_root=storage_root, total_bytes=60e9,
+            data_root=storage_root,
+            total_bytes=float(frozen_cache_cfg.get("total_data_budget_gb", 60)) * 1e9,
         )
         flow_model = CachedFlow(
             flow_model, flow_cache,
@@ -1065,7 +1103,7 @@ def main() -> int:
     # Read from the config, never a CLI flag. v75's YAML set train.init_ckpt, the run ignored it
     # because only --init-ckpt was consulted, and cfg.json then recorded a warm start that never
     # happened -- v75 silently duplicated v76.
-    init_ckpt_cfg = train_cfg.get("init_ckpt")
+    init_ckpt_cfg = _resolve_init_checkpoint(train_cfg)
 
     cfg_snapshot = {
         **cfg,
@@ -1074,6 +1112,8 @@ def main() -> int:
             "out_dir": str(args.out_dir),
             "data_root": str(args.data_root),
             "init_ckpt": str(init_ckpt_cfg) if init_ckpt_cfg else None,
+            "init_best_from": str(train_cfg.get("init_best_from"))
+            if train_cfg.get("init_best_from") else None,
         },
     }
     dump_resolved(cfg_snapshot, args.out_dir / "cfg.json")
