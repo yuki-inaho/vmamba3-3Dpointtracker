@@ -126,7 +126,38 @@ class DINOv2Encoder(nn.Module):
     # Training runs with window <= 8 so chunking is a no-op there.
     ENC_CHUNK = 32
 
+    def train(self, mode: bool = True):
+        super().train(mode)
+        # Parent tracker.train() must not enable stochastic layers in the
+        # frozen backbone. Trainable fusion layers keep the parent's mode.
+        self.backbone.eval()
+        return self
+
+    def configure_cache(self, cache):
+        if self.fuse_proj is not None:
+            raise ValueError("DINO feature cache requires frozen features without trainable fusion")
+        self.feature_cache = cache
+
     def _forward_one_image_batch(self, image: Tensor) -> tuple[Tensor, Tensor]:
+        cache = getattr(self, "feature_cache", None)
+        if cache is None:
+            return self._forward_one_image_batch_uncached(image)
+        if image.shape[-2:] != (self.image_size, self.image_size):
+            image = F.interpolate(image, size=(self.image_size, self.image_size),
+                                  mode="bilinear", align_corners=False)
+        keys = [cache.key(frame) for frame in image]
+        values = [cache.get(key, image.device) for key in keys]
+        missing = [i for i, value in enumerate(values) if value is None]
+        if missing:
+            feats, classes = self._forward_one_image_batch_uncached(image[missing])
+            items = []
+            for j, i in enumerate(missing):
+                values[i] = (feats[j], classes[j])
+                items.append((keys[i], values[i]))
+            cache.put_many(items)
+        return torch.stack([value[0] for value in values]), torch.stack([value[1] for value in values])
+
+    def _forward_one_image_batch_uncached(self, image: Tensor) -> tuple[Tensor, Tensor]:
         """Args:  image (B, 3, H, W) in [0, 1].
         Returns: tuple (feat, cls) where
             feat: (B, dim, grid, grid)   — patch feature map

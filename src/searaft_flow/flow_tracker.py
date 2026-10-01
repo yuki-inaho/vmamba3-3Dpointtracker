@@ -73,17 +73,23 @@ def track_clip(
     if F_ == 1:
         return uv.cpu(), vis.float().cpu()
 
+    if hasattr(flow_model, "prefetch_clip") and not hasattr(flow_model, "consecutive_flows"):
+        flow_model.prefetch_clip(images)
+
     # Precompute consecutive forward and backward flows on CPU to save GPU VRAM.
     # For long clips (e.g. ADT: 300 frames) keeping all flow tensors on GPU would
     # use ~1.65 GB (fwd+bwd+rev_fwd).  Store on CPU; move to device per frame.
-    fwd = [
-        flow_model.flow(images[t : t + 1], images[t + 1 : t + 2])[0].cpu().unsqueeze(0)
-        for t in range(F_ - 1)
-    ]  # each (1, 2, S, S) on CPU
-    bwd = [
-        flow_model.flow(images[t + 1 : t + 2], images[t : t + 1])[0].cpu().unsqueeze(0)
-        for t in range(F_ - 1)
-    ]
+    if hasattr(flow_model, "consecutive_flows"):
+        fwd, bwd = flow_model.consecutive_flows(images)
+    else:
+        fwd = [
+            flow_model.flow(images[t : t + 1], images[t + 1 : t + 2])[0].cpu().unsqueeze(0)
+            for t in range(F_ - 1)
+        ]
+        bwd = [
+            flow_model.flow(images[t + 1 : t + 2], images[t : t + 1])[0].cpu().unsqueeze(0)
+            for t in range(F_ - 1)
+        ]
 
     # Bidirectional mode: run SEA-RAFT on reversed video so backward tracking
     # uses the model in its natural forward direction.

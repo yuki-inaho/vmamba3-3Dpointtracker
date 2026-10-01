@@ -27,7 +27,20 @@
 # command to fetch one, and lets the job run on the no-cuDNN fallback.
 
 _cudnn_setup() {
-  local sys_lib sys_ver mm dir
+  local sys_lib sys_ver mm dir wheel_root cuda_dir
+  # Prefer this project's complete uv-installed stack. Its runtime engine needs
+  # libnvrtc from nvidia/cu13/lib; without this path dlopen can fail even though
+  # the cuDNN wheel contains every engine. Keep all cuDNN components on one version.
+  for wheel_root in "${VIRTUAL_ENV:-$PWD/.venv}"/lib/python*/site-packages/nvidia; do
+    dir="$wheel_root/cudnn/lib"
+    cuda_dir="$wheel_root/cu13/lib"
+    if [ -f "$dir/libcudnn_engines_tensor_ir.so.9" ] &&
+       [ -f "$dir/libcudnn_engines_runtime_compiled.so.9" ] &&
+       [ -f "$cuda_dir/libnvrtc.so.13" ]; then
+      export LD_LIBRARY_PATH="$dir:$cuda_dir:${LD_LIBRARY_PATH:-}"
+      return 0
+    fi
+  done
   sys_lib=$(ls -1 /usr/lib/x86_64-linux-gnu/libcudnn.so.9.* 2>/dev/null | head -1)
   [ -n "$sys_lib" ] || return 0        # no system cuDNN: nothing can shadow the wheel
 

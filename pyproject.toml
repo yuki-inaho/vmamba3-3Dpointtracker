@@ -6,8 +6,8 @@ authors = [{ name = "Masahiro Ogawa", email = "masahiro.ogaw@gmail.com" }]
 requires-python = ">=3.11,<3.13"
 dependencies = [
     "visionmamba3",
-    "torch>=2.2",
-    "torchvision",
+    "torch==2.12.1",
+    "torchvision==0.27.1",
     "einops",
     "numpy<2",
     "pillow",
@@ -35,6 +35,7 @@ dependencies = [
     "pycocotools",
     "py7zr",
     "timm>=1.0.28",
+    "tensorboard>=2.21.0",
 ]
 
 [tool.uv.sources]
@@ -55,9 +56,8 @@ addopts = "-ra"
 dev = ["pytest>=7", "pytest-xdist", "ruff>=0.15.14"]
 
 [tool.uv]
-# torch pins nvidia-cudnn-cu13==9.20.0.48, which ships no libcudnn_engines_tensor_ir. The
-# system cuDNN (apt, 9.26) does, and the loader supplies it from /usr/lib alongside the
-# wheel's 9.20 core -- a 9.26 engine inside a 9.20 core, which every convolution rejects with
-# CUDNN_STATUS_SUBLIBRARY_VERSION_MISMATCH. Overriding to 9.26 makes the whole set one
-# version; torch 2.12.1 was verified to run against it.
-override-dependencies = ["nvidia-cudnn-cu13>=9.26"]
+# Keep the CUDA stack used by the synthetic refiner/head GPU smoke and DA3 probe.
+# This complete cuDNN wheel supplies tensor_ir and runtime_compiled engines.
+# Source scripts/cudnn_env.sh to select its libraries and matching CUDA/NVRTC
+# rather than mixing components with the host cuDNN installation.
+override-dependencies = ["nvidia-cudnn-cu13==9.26.0.51"]

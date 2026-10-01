@@ -19,6 +19,11 @@ import numpy as np
 import torch
 import torch.nn as nn
 import yaml
+from torch.utils.tensorboard import SummaryWriter
+from mamba3_tracker.train.early_stop import EarlyStopping
+from mamba3_tracker.train.runtime import (
+    CheckpointManager, build_optimizer, evaluation_weights, restore_checkpoint,
+)
 
 sys.path.insert(0, str(Path(__file__).resolve().parents[1] / "src"))
 
@@ -140,6 +145,8 @@ def main():
     pw = float(pw)
     print(f"[v94] pos_weight resolved to {pw:.4f}", flush=True)
 
+    if any(not len(train[ss]) or not len(held[ss]) for ss in subsets):
+        raise ValueError("Every subset requires nonempty train and heldout flow caches")
     model = FlowVisHead(
         dim=int(mc["dim"]), state_dim=int(mc["state_dim"]),
         num_heads=int(mc["num_heads"]), num_layers=int(mc["num_layers"]),
@@ -148,32 +155,67 @@ def main():
     n_par = sum(p.numel() for p in model.parameters())
     print(f"[v94] FlowVisHead {n_par} params, bidirectional={mc['bidirectional']}", flush=True)
 
-    opt = torch.optim.AdamW(model.parameters(), lr=float(tc["lr"]))
+    opt = build_optimizer(model, tc)
+    manager = CheckpointManager(out_dir, k=int(tc.get("checkpoint_k", 3)), mode="max")
+    writer = SummaryWriter(str(out_dir / "tensorboard"))
+    start_step = 0
+    history = []
+    stopper = EarlyStopping(int(tc.get("early_stop_patience", 0)),
+                            float(tc.get("early_stop_min_delta", 0.001)), mode="max")
+    if (out_dir / "latest.pt").is_file():
+        st = restore_checkpoint(out_dir / "latest.pt", model, opt, device=device)
+        start_step = int(st["step"])
+        history = list(st.get("history", []))
+        rng.bit_generator.state = st["extra"]["sample_rng"]
+        pick.setstate(st["extra"]["clip_rng"])
+        print(f"[v94] resumed at step {start_step}", flush=True)
+    stopper.restore(st.get("extra", {}).get("early_stop") if start_step else None,
+                    [(row["step"], row["accuracy"]) for row in history])
+    def save_checkpoint(step, score=None):
+        return manager.save(step, model, opt, history=history, cfg=cfg, score=score,
+                            extra={"sample_rng": rng.bit_generator.state,
+                                   "clip_rng": pick.getstate(),
+                                   "early_stop": stopper.state_dict()})
     lossf = nn.BCEWithLogitsLoss(pos_weight=torch.tensor(pw, device=device))
     steps = int(tc["steps"])
-    best = (-1.0, -1)
+    best = (manager.best[0]["score"], manager.best[0]["step"]) if manager.best else (-1., -1)
     run_loss, run_n = 0.0, 0
 
-    for step in range(1, steps + 1):
-        for g in opt.param_groups:
-            g["lr"] = float(tc["lr"]) * wsd(step, int(tc["warmup"]), int(tc["decay"]), steps)
+    completed_step = start_step
+    for step in range(start_step + 1, steps + 1):
+        if stopper.stopped:
+            break
+        if tc.get("optimizer", "adamw") == "amuse":
+            opt.train()
+        else:
+            for g in opt.param_groups:
+                g["lr"] = float(tc["lr"]) * wsd(step, int(tc["warmup"]), int(tc["decay"]), steps)
         ss = pick.choice(subsets)          # uniform over subsets, not over clips:
         clip = pick.choice(train[ss])      # pstudio has far fewer clips than adt
         ff, fb, vg, _ = batch_from(clip, int(dc["num_points"]), rng, device)
         loss = lossf(model(ff, fb), vg)
         opt.zero_grad(set_to_none=True)
+        if not torch.isfinite(loss):
+            raise FloatingPointError(f"Non-finite visibility loss at step {step}")
         loss.backward()
-        nn.utils.clip_grad_norm_(model.parameters(), float(tc["grad_clip"]))
+        gn = nn.utils.clip_grad_norm_(model.parameters(), float(tc["grad_clip"]))
+        if not torch.isfinite(gn):
+            raise FloatingPointError(f"Non-finite visibility gradient at step {step}")
         opt.step()
+        completed_step = step
         run_loss += float(loss.detach())
         run_n += 1
+        writer.add_scalar("train/loss", float(loss.detach()), step)
+        writer.add_scalar("train/lr", opt.param_groups[0]["lr"], step)
+        writer.add_scalar("train/grad_norm", float(gn), step)
 
         if step % int(tc["log_every"]) == 0:
             print(f"[v94] step {step:5d}  loss {run_loss / run_n:.4f}  "
                   f"lr {opt.param_groups[0]['lr']:.2e}", flush=True)
             run_loss, run_n = 0.0, 0
         if step % int(tc["val_every"]) == 0 or step == steps:
-            rows = validate(model, held, device)
+            with evaluation_weights(opt):
+                rows = validate(model, held, device)
             mean_h = sum(h for h, _ in rows.values()) / len(rows)
             mean_m = sum(m for _, m in rows.values()) / len(rows)
             txt = "  ".join(f"{s}: head {h:.4f} mask {m:.4f}" for s, (h, m) in rows.items())
@@ -181,15 +223,25 @@ def main():
                   f"mask {mean_m:.4f}  delta {mean_h - mean_m:+.4f}", flush=True)
             if mean_h > best[0]:
                 best = (mean_h, step)
-                torch.save({"model": model.state_dict(), "step": step, "cfg": cfg},
-                           out_dir / "best.pt")
-                (out_dir / "best.json").write_text(json.dumps(
-                    {"step": step, "mean_head": mean_h, "mean_mask": mean_m,
-                     "per_subset": {s: {"head": h, "mask": m} for s, (h, m) in rows.items()}},
-                    indent=2))
+            writer.add_scalar("val/heldout_accuracy", mean_h, step)
+            writer.add_scalar("val/flow_mask_accuracy", mean_m, step)
+            writer.flush()
+            history.append({"step": step, "accuracy": mean_h})
+            stopper.observe(mean_h, step)
+            writer.add_scalar("early_stop/bad_checks", stopper.since, step)
+            save_checkpoint(step, score=mean_h)
+            if stopper.stopped:
+                print(f"[v94] EARLY STOP at step {step}", flush=True)
+                break
         if step % int(tc["ckpt_every"]) == 0:
-            torch.save({"model": model.state_dict(), "step": step, "cfg": cfg},
-                       out_dir / f"ckpt_{step}.pt")
+            save_checkpoint(step)
+    save_checkpoint(completed_step)
+    (out_dir / "training_status.json").write_text(json.dumps({
+        "step": completed_step, "max_steps": steps, "early_stop": stopper.state_dict(),
+        "reason": "early_stopping" if stopper.stopped else "max_steps",
+        "best_checkpoint": manager.best[0]["path"] if manager.best else None,
+    }, indent=2))
+    writer.close()
 
     print(f"[v94] DONE best mean held-out accuracy {best[0]:.4f} at step {best[1]}", flush=True)
 

@@ -31,9 +31,13 @@ from pathlib import Path
 import numpy as np
 import torch
 import torch.nn.functional as Fn
-from torch.optim import AdamW
 from torch.optim.lr_scheduler import LambdaLR
 from torch.utils.data import DataLoader
+from torch.utils.tensorboard import SummaryWriter
+
+from mamba3_tracker.train.runtime import (
+    CheckpointManager, build_optimizer, evaluation_weights, restore_checkpoint,
+)
 
 from mamba3_tracker.data.dataset import (
     TAPVid3DDataset,
@@ -61,6 +65,7 @@ from mamba3_tracker.train.loss import (
     TrackingLossV47,
 )
 from mamba3_tracker.train.schedule import wsd
+from mamba3_tracker.train.early_stop import EarlyStopping
 from searaft_flow import FlowModel, track_clip
 
 
@@ -91,31 +96,9 @@ def _ray_from_uv(uv: torch.Tensor, K: torch.Tensor) -> torch.Tensor:
     return torch.stack([rx, ry], dim=-1)
 
 
-def _save_ckpt(out_dir: Path, step: int, model, optim, sched, history, cfg) -> Path:
-    path = out_dir / f"ckpt_{step}.pt"
-    tmp = out_dir / f"ckpt_{step}.pt.tmp"
-    torch.save(
-        {
-            "step": step,
-            "model": model.state_dict(),
-            "optim": optim.state_dict(),
-            "sched": sched.state_dict() if sched is not None else None,
-            "history": history,
-            "cfg": cfg,
-        },
-        tmp,
-    )
-    tmp.replace(path)
-    for old in out_dir.glob("ckpt_*.pt"):
-        if old != path:
-            try:
-                old.unlink()
-            except OSError:
-                pass
-    return path
-
-
 def _find_latest_ckpt(out_dir: Path) -> Path | None:
+    if (out_dir / "latest.pt").is_file():
+        return out_dir / "latest.pt"
     cands = []
     for p in out_dir.glob("ckpt_*.pt"):
         try:
@@ -279,8 +262,12 @@ def _run_flow_batch(flow_model, batch, device, image_size, fb_alpha, fb_beta,
                 z_b = torch.cat([z_b, z_b.new_zeros(F_, n_pad)], dim=1)
             all_zw.append(z_b.to(device))
     else:
+        images_d = batch.images.to(device, non_blocking=True)
+        images_255 = images_d * 255.0
+        if hasattr(flow_model, "prefetch_windows"):
+            flow_model.prefetch_windows(images_255)
         for b in range(B):
-            imgs = batch.images[b].to(device) * 255.0
+            imgs = images_255[b]
             q = batch.queries_xyt[b].to(device)
             anchor_t = q[:, 2].long().clamp(0, F_ - 1)
             uv, vis = track_clip(
@@ -303,7 +290,7 @@ def _run_flow_batch(flow_model, batch, device, image_size, fb_alpha, fb_beta,
         z_raw = _sample_depth(batch.depth.to(device), uv, float(image_size))
     else:
         raise ValueError(f"unknown z_source {z_source!r}; expected 'waft' or 'depth_map'")
-    images = batch.images.to(device)  # (B,F,3,H,W) in [0,1]
+    images = images_d if waft_pred_dir is None else batch.images.to(device)
     return ray, z_raw, vis, uv, images, K
 
 
@@ -582,6 +569,10 @@ def main() -> int:
         cfg["train"],
         cfg["loss"],
     )
+    if "cpu_threads" in train_cfg:
+        if int(train_cfg["cpu_threads"]) < 1:
+            raise ValueError("train.cpu_threads must be positive")
+        torch.set_num_threads(int(train_cfg["cpu_threads"]))
     flow_cfg = cfg.get("flow", {})
     # Every experimental setting comes from the config, so the run is reproducible from it alone
     # and cfg.json below is a complete record of what produced the numbers.
@@ -603,10 +594,8 @@ def main() -> int:
     val_at_step0 = bool(train_cfg.get("val_at_step0", True))
     # Early stopping: patience on the BEST value, not flatness between neighbours, with a tolerance
     # above the noise floor. Keeps the best checkpoint rather than the last.
-    es_patience = int(train_cfg.get("early_stop_patience", 0))
-    es_min_delta = float(train_cfg.get("early_stop_min_delta", 0.01))
-    es_best, es_since, es_best_step = float("inf"), 0, -1
-    es_raw_best = float("inf")
+    stopper = EarlyStopping(int(train_cfg.get("early_stop_patience", 0)),
+                            float(train_cfg.get("early_stop_min_delta", 0.001)))
     lambda_dsr = float(loss_cfg.get("lambda_dsr", 0.0) or 0.0)
     # Visibility. Kept out of loss.weights on purpose: those are renormalised to sum to 1, so
     # adding a term there would silently change pos_3D's share and confound the depth path.
@@ -637,27 +626,64 @@ def main() -> int:
 
     split_cfg = data_cfg.get("split", {"source": "official"})
     source = split_cfg.get("source", "official")
+    growing_pool = None
+    growing = bool(split_cfg.get("growing", False))
+    if growing and data_cfg.get("oversample"):
+        raise ValueError("growing pool requires no oversample")
     if source == "official":
         train_clips, test_clips = official_train_test_split(
             args.data_root, subsets=data_cfg["subsets"]
         )
-        n_val_monitor = int(split_cfg.get("n_val_monitor", 15))
-        rng = random.Random(int(split_cfg.get("seed", 42)))
-        val_clips = rng.sample(train_clips, min(n_val_monitor, len(train_clips)))
-        # The monitor clips MUST leave the training set. Without this they are training data, so the
-        # "VAL" loss measures fitting rather than generalisation -- it falls while held-out metric-AJ
-        # falls with it, which reads as an anti-correlated objective but is plain overfitting. Every
-        # lr choice, early stop and "best checkpoint" in the v73-v82 line was selected on that
-        # signal. holdout_val=False reproduces the old behaviour for arms already in flight.
-        holdout = bool(split_cfg.get("holdout_val", True))
-        if holdout:
-            _vs = {str(c) for c in val_clips}
-            train_clips = [c for c in train_clips if str(c) not in _vs]
-        print(
-            f"[train] split=official  {len(train_clips)} train / {n_val_monitor} val-monitor "
-            f"({'HELD OUT' if holdout else 'IN TRAIN -- not a generalisation signal'}) / "
-            f"{len(test_clips)} test  subsets={data_cfg['subsets']}"
-        )
+        manifest_path = split_cfg.get("train_manifest")
+        if growing:
+            from mamba3_tracker.data.growing import GrowingClipPool, PoolNotReady
+            from mamba3_tracker.data.depth_source import resolve
+            if not manifest_path:
+                raise ValueError("growing pool requires train_manifest")
+            raw_root = args.data_root if args.data_root.name == "tapvid3d" else args.data_root / "tapvid3d"
+            growing_pool = GrowingClipPool(
+                manifest_path, raw_root,
+                resolve(data_cfg.get("depth") or data_cfg["da3_depth_root"]).root,
+                args.out_dir / "growing_pool.json", data_cfg["subsets"],
+                val_per_subset=int(split_cfg.get("val_per_subset", 5)),
+                seed=int(split_cfg.get("seed", 42)),
+            )
+            while True:
+                try:
+                    train_clips, val_clips = growing_pool.snapshot()
+                    break
+                except PoolNotReady as exc:
+                    print(f"[train] WAIT DATA: {exc}", flush=True)
+                    time.sleep(15)
+            print(f"[train] GROWING pool {len(train_clips)} train / "
+                  f"{len(val_clips)} FIXED heldout; full selection is still downloading", flush=True)
+        else:
+            manifest_path = split_cfg.get("train_manifest")
+            if manifest_path:
+                from mamba3_tracker.train.runtime import manifest_train_paths
+                train_clips = manifest_train_paths(manifest_path, args.data_root,
+                                                   data_cfg["subsets"])
+                print(f"[train] PARTIAL official full_eval: {len(train_clips)} clips "
+                      f"from {manifest_path}; not full 4419-clip reproduction", flush=True)
+            if not train_clips:
+                raise ValueError("No training clips found")
+            n_val_monitor = int(split_cfg.get("n_val_monitor", 15))
+            rng = random.Random(int(split_cfg.get("seed", 42)))
+            val_clips = rng.sample(train_clips, min(n_val_monitor, len(train_clips)))
+            # The monitor clips MUST leave the training set. Without this they are training data, so the
+            # "VAL" loss measures fitting rather than generalisation -- it falls while held-out metric-AJ
+            # falls with it, which reads as an anti-correlated objective but is plain overfitting. Every
+            # lr choice, early stop and "best checkpoint" in the v73-v82 line was selected on that
+            # signal. holdout_val=False reproduces the old behaviour for arms already in flight.
+            holdout = bool(split_cfg.get("holdout_val", True))
+            if holdout:
+                _vs = {str(c) for c in val_clips}
+                train_clips = [c for c in train_clips if str(c) not in _vs]
+            print(
+                f"[train] split=official  {len(train_clips)} train / {n_val_monitor} val-monitor "
+                f"({'HELD OUT' if holdout else 'IN TRAIN -- not a generalisation signal'}) / "
+                f"{len(test_clips)} test  subsets={data_cfg['subsets']}"
+            )
     elif source == "minival":
         train_clips, val_clips, test_clips = minival_split(
             args.data_root,
@@ -716,7 +742,7 @@ def main() -> int:
     train_ds = TAPVid3DDataset(
         train_clips,
         window_size=int(train_cfg["window"]),
-        augment=True,
+        augment=bool(data_cfg.get("photometric_augment", True)),
         seed=int(train_cfg["seed"]),
         max_queries=int(data_cfg["num_tracks"]),
         image_size=image_size,
@@ -733,15 +759,16 @@ def main() -> int:
         da3_depth_root=da3_depth_root,
         reanchor_window=reanchor_window,
     )
-    loader = DataLoader(
-        train_ds,
-        batch_size=int(train_cfg["batch"]),
-        shuffle=True,
-        num_workers=int(train_cfg["num_workers"]),
-        collate_fn=collate_tracking,
-        pin_memory=True,
-        persistent_workers=False,
-    )
+    from mamba3_tracker.data.bucket_batch import DepthBucketBatchSampler, seed_tracking_worker
+    loader_options = dict(num_workers=int(train_cfg["num_workers"]), collate_fn=collate_tracking,
+                          pin_memory=True, persistent_workers=False, worker_init_fn=seed_tracking_worker)
+    if loader_options["num_workers"] > 0:
+        loader_options["prefetch_factor"] = int(train_cfg.get("prefetch_factor", 1))
+    if train_cfg.get("bucket_batches", False):
+        loader_options["batch_sampler"] = DepthBucketBatchSampler(train_ds, int(train_cfg["batch"]))
+    else:
+        loader_options.update(batch_size=int(train_cfg["batch"]), shuffle=True)
+    loader = DataLoader(train_ds, **loader_options)
 
     # The front-end lives in the config, never on the command line: cfg.json is the record of what
     # a run actually did, and a setting passed as a flag leaves no trace in it.
@@ -767,6 +794,15 @@ def main() -> int:
         flow_model = _build_waft_flow(device, scale=flow_cfg.get("scale"),
                                       iters=flow_cfg.get("iters"))
         print("[train] WAFT flow model, run LIVE on the augmented images (matches the SEA-RAFT path)")
+        if int(flow_cfg.get("batch_size", 1)) > 1:
+            if cfg.get("frozen_cache", {}).get("enabled", False):
+                raise ValueError("Choose either cross-clip RAM flow batches or persistent flow cache")
+            from mamba3_tracker.data.batched_flow import BatchedFlow
+            flow_model = BatchedFlow(flow_model, int(flow_cfg["batch_size"]),
+                                     int(flow_cfg.get("max_batch_size", 64)),
+                                     float(flow_cfg.get("gpu_reserve_gb", 4)))
+            print(f"[train] GPU flow batches across clips: {flow_model.batch.current}"
+                  f"→{flow_model.batch.maximum}, reserve={flow_model.batch.reserve_bytes / 1e9}GB", flush=True)
     else:
         flow_model = FlowModel(
             device,
@@ -972,21 +1008,57 @@ def main() -> int:
         ).to(device)
         print("[train] Mamba3DepthRefiner  loss: TrackingLossV33 (3D-only)")
 
+    frozen_cache_cfg = cfg.get("frozen_cache", {})
+    if frozen_cache_cfg.get("enabled", False):
+        if version != "v35" or not hasattr(model, "dino") or flow_source != "waft_live":
+            raise ValueError("frozen cache mode currently supports the v35 refiner")
+        from mamba3_tracker.data.frozen_cache import (
+            FrozenTensorCache, CachedFlow, module_fingerprint,
+        )
+        cache_root = Path(frozen_cache_cfg["root"]).expanduser()
+        storage_root = args.data_root.parent if args.data_root.name == "tapvid3d" else args.data_root
+        fingerprint = module_fingerprint(model.dino.backbone)
+        dino_cache = FrozenTensorCache(
+            cache_root / "dino", f"dino:{fingerprint}:{model.dino.image_size}",
+            max_bytes=float(frozen_cache_cfg.get("dino_gb", 2)) * 1e9,
+            data_root=storage_root, total_bytes=60e9,
+        )
+        model.dino.configure_cache(dino_cache)
+        # Include auxiliary depth-backbone weights as actually loaded, and
+        # the architecture config, not just the main checkpoint file.
+        flow_fingerprint = module_fingerprint(flow_model.wrapped.model)
+        architecture = json.loads(Path("third_party/WAFT/config/a1/tar-c-t.json").read_text())
+        flow_cache = FrozenTensorCache(
+            cache_root / "flow", f"waft:{flow_fingerprint}:{json.dumps([architecture, flow_cfg], sort_keys=True)}",
+            max_bytes=float(frozen_cache_cfg.get("flow_gb", 4)) * 1e9,
+            data_root=storage_root, total_bytes=60e9,
+        )
+        flow_model = CachedFlow(
+            flow_model, flow_cache,
+            batch_size=int(frozen_cache_cfg.get("flow_batch", 1)),
+            max_batch_size=int(frozen_cache_cfg.get("flow_max_batch", 8)),
+            reserve_gb=float(frozen_cache_cfg.get("gpu_reserve_gb", 8)),
+        )
+        model.dino.ENC_CHUNK = int(frozen_cache_cfg.get("dino_batch", 32))
+        print(f"[train] frozen DINO/flow cache enabled at {cache_root}; "
+              f"photometric_augment={data_cfg.get('photometric_augment', True)}; "
+              f"flow_batch={flow_model.batch.current} max={flow_model.batch.maximum} "
+              f"DINO_batch={model.dino.ENC_CHUNK} GPU_reserve={flow_model.batch.reserve_bytes / 1e9}GB", flush=True)
+
     n_trainable = sum(p.numel() for p in model.parameters() if p.requires_grad) / 1e6
     print(f"[train] trainable={n_trainable:.3f}M params")
 
-    optim = AdamW(
-        model.parameters(),
-        lr=float(train_cfg["lr"]),
-        weight_decay=float(train_cfg["weight_decay"]),
-    )
+    optim = build_optimizer(model, train_cfg)
     n_steps = int(train_cfg["steps"])
-    sched = LambdaLR(
+    sched = None if train_cfg.get("optimizer", "adamw") == "amuse" else LambdaLR(
         optim,
         lr_lambda=lambda s: wsd(
             s, int(train_cfg["warmup"]), int(train_cfg["decay"]), n_steps
         ),
     )
+    manager = CheckpointManager(args.out_dir, k=int(train_cfg.get("checkpoint_k", 3)))
+    writer = SummaryWriter(str(args.out_dir / "tensorboard"))
+    print(f"[train] optimizer={type(optim).__name__}; checkpoints K={manager.k}+latest")
 
     history: list[dict] = []
     motion_history: list[dict] = []
@@ -1089,11 +1161,9 @@ def main() -> int:
 
     latest = _find_latest_ckpt(args.out_dir)
     if latest is not None:
-        st = torch.load(latest, map_location=device, weights_only=False)
-        model.load_state_dict(st["model"], strict=False)
-        optim.load_state_dict(st["optim"])
-        if st.get("sched") is not None:
-            sched.load_state_dict(st["sched"])
+        st = restore_checkpoint(latest, model, optim, sched, device=device)
+        if st.get("extra", {}).get("dataset_rng"):
+            train_ds._rng.setstate(st["extra"]["dataset_rng"])
         start_step = int(st["step"])
         history = list(st.get("history", []))
         mh_path = args.out_dir / "motion_history.json"
@@ -1103,6 +1173,24 @@ def main() -> int:
             except json.JSONDecodeError:
                 pass
         print(f"[train] RESUMED from {latest} at step {start_step}", flush=True)
+
+    stopper.restore(st.get("extra", {}).get("early_stop") if latest is not None else None,
+                    [(row["step"], row["val"]["total"]) for row in history if "val" in row])
+    print(f"[train] early-stop patience={stopper.patience}, min_delta={stopper.min_delta}; "
+          f"best={stopper.best} at {stopper.best_step}, bad_checks={stopper.since}", flush=True)
+
+    def save_checkpoint(completed_step, score=None):
+        result = manager.save(completed_step, model, optim, sched, history, cfg_snapshot,
+                            score=score, extra={
+                                "dataset_rng": train_ds._rng.getstate(),
+                                "early_stop": stopper.state_dict(),
+                            })
+        (args.out_dir / "training_status.json").write_text(json.dumps({
+            "step": completed_step, "max_steps": n_steps, "early_stop": stopper.state_dict(),
+            "reason": "early_stopping" if stopper.stopped else "max_steps" if completed_step >= n_steps else "running",
+            "best_checkpoint": manager.best[0]["path"] if manager.best else None,
+        }, indent=2))
+        return result
 
     grad_clip_val = float(train_cfg["grad_clip"])
     log_every, val_every, ckpt_every = (
@@ -1124,13 +1212,47 @@ def main() -> int:
     micro = 0
     if accum > 1:
         print(f"[train] gradient accumulation: {accum} clips per optimiser step", flush=True)
-    while step < n_steps:
+    if step == 0 and val_at_step0:
+        with evaluation_weights(optim):
+            baseline = _validate(model, version, flow_model, val_ds, loss_fn, device,
+                                 amp_dtype, image_size, fb_alpha, fb_beta,
+                                 n_clips=val_clips_n, waft_pred_dir=waft_pred_dir,
+                                 z_source=z_source)
+        history.append({"step": 0, "val": baseline})
+        stopper.observe(float(baseline["total"]), 0)
+        for key, value in baseline.items():
+            writer.add_scalar(f"val/{key}", value, 0)
+        save_checkpoint(0, score=float(baseline["total"]))
+        print(f"[train] step 0 VAL {_fmt_loss_row(baseline)}", flush=True)
+    if growing_pool:
+        writer.add_scalar("data/train_clips", len(train_ds), step)
+        writer.add_scalar("data/validation_clips", len(val_ds), step)
+    while step < n_steps and not stopper.stopped:
+        if growing_pool and micro == 0 and step % int(split_cfg.get("refresh_steps", 5)) == 0:
+            refreshed, fixed_val = growing_pool.snapshot()
+            if fixed_val != val_clips:
+                raise ValueError("validation membership changed during training")
+            if len(refreshed) > len(train_ds):
+                known = set(train_ds.clip_paths)
+                added = [path for path in refreshed if path not in known]
+                train_ds.clip_paths.extend(added)
+                loader_iter = iter(loader)
+                event = {"step": step, "time": time.time(), "train_clips": len(train_ds),
+                         "added": [str(path) for path in added]}
+                with (args.out_dir / "data_additions.jsonl").open("a") as log:
+                    log.write(json.dumps(event) + "\n")
+                writer.add_scalar("data/train_clips", len(train_ds), step)
+                writer.flush()
+                print(f"[train] DATA ADDED step={step}: +{len(added)}; "
+                      f"train={len(train_ds)}, fixed_val={len(val_clips)}", flush=True)
         try:
             batch = next(loader_iter)
         except StopIteration:
             loader_iter = iter(loader)
             batch = next(loader_iter)
 
+        if device.type == "cuda":
+            torch.cuda.reset_peak_memory_stats(device)
         queries = batch.queries_xyt.to(device, non_blocking=True)
         qmask = batch.query_mask.to(device, non_blocking=True)
         depth_d = batch.depth.to(device, non_blocking=True)
@@ -1196,10 +1318,8 @@ def main() -> int:
             win_sum[_k] = win_sum.get(_k, 0.0) + _v
         win_n += 1
 
-        # Gradient accumulation. batch>1 is not available here: clips carry depth maps of
-        # different resolutions (drivetrack 280x504, adt 504x504) and collate stacks them, so a
-        # mixed pair raises. Accumulating `accum` single-clip gradients before stepping gives the
-        # same sqrt(accum) reduction in gradient noise, across subsets, at no extra memory.
+        # Depth-grid buckets allow real batch>1 without resampling the maps.
+        # Accumulation remains independent; step counts optimizer updates.
         (total / accum).backward()
         micro += 1
         if micro < accum:
@@ -1208,23 +1328,24 @@ def main() -> int:
 
         head_grad = _per_head_grad_norm(model)
         grad_norm = torch.nn.utils.clip_grad_norm_(model.parameters(), grad_clip_val)
-        if not torch.isfinite(grad_norm):
-            print(f"[train] step {step:6d}: non-finite grad_norm — skip", flush=True)
-        elif not torch.isfinite(total):
-            print(f"[train] step {step:6d}: non-finite loss — skip", flush=True)
-        else:
-            optim.step()
-        sched.step()
+        if not torch.isfinite(grad_norm) or not torch.isfinite(total):
+            raise FloatingPointError(f"non-finite loss/gradient at completed step {step}")
+        optim.step()
+        if sched is not None:
+            sched.step()
         optim.zero_grad(set_to_none=True)
+        step += 1
 
         if step % log_every == 0:
-            lr = sched.get_last_lr()[0]
+            lr = optim.param_groups[0]["lr"]
             dt = time.perf_counter() - t0
             row = {k: v / win_n for k, v in win_sum.items()}
             win_sum, win_n = {}, 0
             last_vis = vis_sum / vis_n if vis_n else float("nan")
             vis_sum, vis_n = 0.0, 0
             gn = float(grad_norm.item()) if torch.isfinite(grad_norm) else float("nan")
+            peak_memory = max(torch.cuda.max_memory_allocated(),
+                              getattr(flow_model, "last_peak_allocated", 0))
             duv_str = ""
             if pred.delta_uv is not None:
                 duv_str = f"  |Δuv|={float(pred.delta_uv.abs().mean().item()):.3f}px"
@@ -1232,71 +1353,77 @@ def main() -> int:
                 f"[train] step {step:6d}/{n_steps}  mean{_fmt_loss_row(row, last_dsr)}"
                 f"{'' if lambda_vis <= 0 else f'  Lvis={last_vis:.4f}'}  lr={lr:.2e}  "
                 f"|grad|={gn:.2e}  {_fmt_grad_row(head_grad)}{duv_str}  "
-                f"mem={torch.cuda.max_memory_allocated()/2**20:.0f}MiB  elapsed={dt:.0f}s",
+                f"mem={peak_memory/2**20:.0f}MiB  elapsed={dt:.0f}s",
                 flush=True,
             )
             history.append(
                 {"step": step, "lr": lr, "grad_norm": gn, "head_grad": head_grad, **row}
             )
 
-        if (step > 0 and step % val_every == 0) or (step == 0 and val_at_step0):
-            v = _validate(
-                model,
-                version,
-                flow_model,
-                val_ds,
-                loss_fn,
-                device,
-                amp_dtype,
-                image_size,
-                fb_alpha,
-                fb_beta,
-                n_clips=val_clips_n,
-                waft_pred_dir=waft_pred_dir,
-                z_source=z_source,
-            )
+            for key, value in row.items():
+                writer.add_scalar(f"train/{key}", value, step)
+            writer.add_scalar("train/lr", lr, step)
+            writer.add_scalar("train/grad_norm", gn, step)
+            if frozen_cache_cfg.get("enabled", False):
+                for label, cache in [("dino", dino_cache), ("flow", flow_cache)]:
+                    writer.add_scalar(f"cache/{label}_hits", cache.hits, step)
+                    writer.add_scalar(f"cache/{label}_misses", cache.misses, step)
+                writer.add_scalar("cache/flow_batch", flow_model.batch.current, step)
+                writer.add_scalar("cache/flow_oom_retries", flow_model.batch.retries, step)
+            writer.add_scalar("system/gpu_memory_mib", peak_memory/2**20, step)
+            writer.add_scalar("data/batch_clips", len(batch.clip_ids), step)
+            if hasattr(flow_model, "batch"):
+                writer.add_scalar("system/flow_batch", flow_model.batch.current, step)
+                writer.add_scalar("system/flow_oom_retries", flow_model.batch.retries, step)
+                if hasattr(flow_model, "last_max_batch"):
+                    writer.add_scalar("system/flow_executed_batch", flow_model.last_max_batch, step)
+            writer.flush()
+
+        if step % val_every == 0 or step == n_steps:
+            with evaluation_weights(optim):
+                v = _validate(
+                    model,
+                    version,
+                    flow_model,
+                    val_ds,
+                    loss_fn,
+                    device,
+                    amp_dtype,
+                    image_size,
+                    fb_alpha,
+                    fb_beta,
+                    n_clips=val_clips_n,
+                    waft_pred_dir=waft_pred_dir,
+                    z_source=z_source,
+                )
             print(f"[train] step {step:6d}  VAL     {_fmt_loss_row(v)}", flush=True)
             cur = float(v["total"])
-            # The RAW best is saved unconditionally, NOT only when early stopping is on. _save_ckpt
-            # prunes every other ckpt_*.pt, so the periodic checkpoints keep just the newest step and
-            # the best point on the curve is otherwise unrecoverable: v78a reached its lowest
-            # validation (0.0951) at step 750 with early_stop_patience=0, and those weights were lost.
-            if cur < es_raw_best:
-                es_raw_best = cur
-                best_dir = args.out_dir / "best"
-                best_dir.mkdir(parents=True, exist_ok=True)
-                _save_ckpt(best_dir, step, model, optim, sched, history, cfg_snapshot)
-                print(f"[train] best checkpoint: {cur:.4f} at step {step}", flush=True)
-            if es_patience > 0:
-                # Two separate decisions, deliberately. The checkpoint above follows the RAW best, so
-                # a value better by less than the tolerance is still kept; the patience counter uses
-                # the tolerance, so noise-sized gains do not postpone stopping forever. Conflating
-                # them discards a genuinely better checkpoint for being better by too little.
-                if cur < es_best - es_min_delta:
-                    es_best, es_since, es_best_step = cur, 0, step
-                    print(f"[train] early-stop: improved to {cur:.4f} at step {step}", flush=True)
-                else:
-                    es_since += 1
-                    print(f"[train] early-stop: no improvement ({cur:.4f} vs best "
-                          f"{es_best:.4f} @ {es_best_step}), {es_since}/{es_patience}", flush=True)
-                    if es_since >= es_patience:
-                        print(f"[train] EARLY STOP at step {step}: best {es_best:.4f} was at step "
-                              f"{es_best_step}, not beaten by {es_min_delta} in "
-                              f"{es_patience} checks", flush=True)
-                        _save_ckpt(args.out_dir, step, model, optim, sched, history, cfg_snapshot)
-                        break
             history.append({"step": step, "val": v})
-            m = _motion_check(
-                model,
-                version,
-                flow_model,
-                val_clips,
-                device,
-                amp_dtype,
-                image_size,
-                fb_alpha,
-                fb_beta,
-            )
+            for key, value in v.items():
+                writer.add_scalar(f"val/{key}", value, step)
+            writer.flush()
+            stopper.observe(cur, step)
+            writer.add_scalar("early_stop/bad_checks", stopper.since, step)
+            save_checkpoint(step, score=cur)  # Persist the updated stopping state.
+            if stopper.patience:
+                print(f"[train] early-stop best={stopper.best:.6f} @ {stopper.best_step}; "
+                      f"bad_checks={stopper.since}/{stopper.patience}", flush=True)
+            if stopper.stopped:
+                print(f"[train] EARLY STOP at step {step}", flush=True)
+                (args.out_dir / "loss_history.json").write_text(json.dumps(history, indent=2))
+                break
+            with evaluation_weights(optim):
+                m = _motion_check(
+                    model,
+                    version,
+                    flow_model,
+                    val_clips,
+                    device,
+                    amp_dtype,
+                    image_size,
+                    fb_alpha,
+                    fb_beta,
+                )
             print(f"[train] step {step:6d}  MOTION  {_fmt_motion_row(m)}", flush=True)
             motion_history.append(
                 {"step": step, **{f"{k}_ratio": r for k, r in m.items()}}
@@ -1305,21 +1432,17 @@ def main() -> int:
                 json.dumps(motion_history, indent=2)
             )
 
-        if step > 0 and step % ckpt_every == 0:
-            p = _save_ckpt(
-                args.out_dir, step, model, optim, sched, history, cfg_snapshot
-            )
+        if step > 0 and (step % ckpt_every == 0 or step == start_step + 1):
+            p = save_checkpoint(step)
             print(f"[train] saved {p}", flush=True)
 
         (args.out_dir / "loss_history.json").write_text(json.dumps(history, indent=2))
-        step += 1
 
     # `step`, not n_steps: with early stopping the loop can exit below the ceiling, and labelling
     # those weights ckpt_<n_steps> made a stopped-at-8000 model look like a completed 20000-step run
     # -- which then got evaluated in place of the best checkpoint.
-    final = _save_ckpt(
-        args.out_dir, step, model, optim, sched, history, cfg_snapshot
-    )
+    final = save_checkpoint(step)
+    writer.close()
     print(f"[train] DONE — {final}")
     return 0
 

@@ -118,6 +118,10 @@ uv run python scripts/precompute_da3_depths.py      # DA3-l depth for every clip
   redistribute the ADT clips; `download_tapvid3d_all.py --subsets pstudio` fetches one subset.
 - `precompute_da3_depths.py` runs DA3-l over every clip into `~/data/tapvid3d_da3/`.
 
+For a ~60 GB subset workflow, incremental downloads and training, batched depth generation,
+reusable DINO/flow caches, and artificial-data smoke training, see
+[the partitioned data workflow](doc/partitioned_data.md).
+
 ### 4.2 Train the refiner (v64)
 
 ```bash
