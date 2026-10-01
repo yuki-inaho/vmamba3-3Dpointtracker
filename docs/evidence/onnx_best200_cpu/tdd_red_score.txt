@@ -1,0 +1,62 @@
+FF                                                                       [100%]
+=================================== FAILURES ===================================
+____________________ test_score_contains_absolute_metric_aj ____________________
+
+    def test_score_contains_absolute_metric_aj():
+>       assert 'metric_average_jaccard' in ns['score'](*fixture())
+E       AssertionError: assert 'metric_average_jaccard' in {'average_jaccard': 1.0, 'average_pts_within_thresh': 1.0, 'clip_id': 'fixture', 'metric_err_mean_m': 0.0, ...}
+E        +  where {'average_jaccard': 1.0, 'average_pts_within_thresh': 1.0, 'clip_id': 'fixture', 'metric_err_mean_m': 0.0, ...} = <function score at 0x7f148b66c4a0>(*(namespace(K=tensor([[896.,   0., 448.],\n        [  0., 896., 448.],\n        [  0.,   0.,   1.]]), tracks_XYZ=tensor([...3.]],\n\n       [[1., 1., 4.],\n        [1., 1., 4.]]], dtype=float32), array([[1., 1.],\n       [1., 1.]], dtype=float32)))
+E        +    where (namespace(K=tensor([[896.,   0., 448.],\n        [  0., 896., 448.],\n        [  0.,   0.,   1.]]), tracks_XYZ=tensor([...3.]],\n\n       [[1., 1., 4.],\n        [1., 1., 4.]]], dtype=float32), array([[1., 1.],\n       [1., 1.]], dtype=float32)) = fixture()
+
+../red_score_tests.py:20: AssertionError
+__________________ test_intrinsics_match_official_256_scaling __________________
+
+    def test_intrinsics_match_official_256_scaling():
+        captured=[]
+        original=ns['compute_clip_metrics']
+        def capture(*args):
+            captured.append(args[-1]); return original(*args)
+        ns['compute_clip_metrics']=capture
+        try: ns['score'](*fixture())
+        finally: ns['compute_clip_metrics']=original
+>       np.testing.assert_allclose(captured[0], np.array([896,896,448,448])*256/1280)
+E       AssertionError:
+E       Not equal to tolerance rtol=1e-07, atol=0
+E
+E       Mismatched elements: 4 / 4 (100%)
+E       Max absolute difference among violations: 716.8
+E       Max relative difference among violations: 4.
+E        ACTUAL: array([896., 896., 448., 448.], dtype=float32)
+E        DESIRED: array([179.2, 179.2,  89.6,  89.6])
+
+../red_score_tests.py:30: AssertionError
+=============================== warnings summary ===============================
+red_score_tests.py::test_score_contains_absolute_metric_aj
+red_score_tests.py::test_intrinsics_match_official_256_scaling
+  /mnt/data/onnx_work/vmamba3-3Dpointtracker-main/src/mamba3_tracker/eval/tapvid3d_eval.py:72: DeprecationWarning: Conversion of an array with ndim > 0 to a scalar is deprecated, and will error in future. Ensure you extract a single element from your array before performing this operation. (Deprecated NumPy 1.25.)
+    "average_jaccard": float(m["average_jaccard"]),
+
+red_score_tests.py::test_score_contains_absolute_metric_aj
+red_score_tests.py::test_intrinsics_match_official_256_scaling
+  /mnt/data/onnx_work/vmamba3-3Dpointtracker-main/src/mamba3_tracker/eval/tapvid3d_eval.py:73: DeprecationWarning: Conversion of an array with ndim > 0 to a scalar is deprecated, and will error in future. Ensure you extract a single element from your array before performing this operation. (Deprecated NumPy 1.25.)
+    "average_pts_within_thresh": float(m["average_pts_within_thresh"]),
+
+red_score_tests.py::test_score_contains_absolute_metric_aj
+red_score_tests.py::test_intrinsics_match_official_256_scaling
+  /mnt/data/onnx_work/vmamba3-3Dpointtracker-main/src/mamba3_tracker/eval/tapvid3d_eval.py:74: DeprecationWarning: Conversion of an array with ndim > 0 to a scalar is deprecated, and will error in future. Ensure you extract a single element from your array before performing this operation. (Deprecated NumPy 1.25.)
+    "occlusion_accuracy": float(m["occlusion_accuracy"]),
+
+-- Docs: https://docs.pytest.org/en/stable/how-to/capture-warnings.html
+=========================== short test summary info ============================
+FAILED ../red_score_tests.py::test_score_contains_absolute_metric_aj - AssertionError: assert 'metric_average_jaccard' in {'average_jaccard': 1.0, 'average_pts_within_thresh': 1.0, 'clip_id': 'fixture', 'metric_err_mean_m': 0.0, ...}
+ +  where {'average_jaccard': 1.0, 'average_pts_within_thresh': 1.0, 'clip_id': 'fixture', 'metric_err_mean_m': 0.0, ...} = <function score at 0x7f148b66c4a0>(*(namespace(K=tensor([[896.,   0., 448.],\n        [  0., 896., 448.],\n        [  0.,   0.,   1.]]), tracks_XYZ=tensor([...3.]],\n\n       [[1., 1., 4.],\n        [1., 1., 4.]]], dtype=float32), array([[1., 1.],\n       [1., 1.]], dtype=float32)))
+ +    where (namespace(K=tensor([[896.,   0., 448.],\n        [  0., 896., 448.],\n        [  0.,   0.,   1.]]), tracks_XYZ=tensor([...3.]],\n\n       [[1., 1., 4.],\n        [1., 1., 4.]]], dtype=float32), array([[1., 1.],\n       [1., 1.]], dtype=float32)) = fixture()
+FAILED ../red_score_tests.py::test_intrinsics_match_official_256_scaling - AssertionError:
+Not equal to tolerance rtol=1e-07, atol=0
+
+Mismatched elements: 4 / 4 (100%)
+Max absolute difference among violations: 716.8
+Max relative difference among violations: 4.
+ ACTUAL: array([896., 896., 448., 448.], dtype=float32)
+ DESIRED: array([179.2, 179.2,  89.6,  89.6])
+2 failed, 6 warnings in 1.24s

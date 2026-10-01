@@ -1,0 +1,3 @@
+Independent CPU process: all four outputs match; no Torch import
+
+[stderr]

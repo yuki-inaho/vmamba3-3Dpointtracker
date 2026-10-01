@@ -119,6 +119,15 @@ class OnnxV35Refiner(nn.Module):
             raise ValueError("This exporter expects frozen DINO features")
         if any(config.get(flag, False) for flag in ("two_pool", "per_frame_scale", "within_frame", "pose_head")):
             raise ValueError("This exporter supports the selected v35 best200 configuration")
+        if dino_dim != 384 or int(config.get("dino_image_size", 448)) != 448:
+            raise ValueError("The deployment contract requires 384-channel, 28x28 DINO features")
+        if int(config.get("num_layers", 2)) < 1 or int(config.get("dim", 128)) < 1:
+            raise ValueError("num_layers and dim must be positive")
+        patch = int(config.get("patch_size", 5))
+        if patch < 1 or patch % 2 == 0:
+            raise ValueError("patch_size must be a positive odd integer")
+        if float(config.get("image_size", 896)) != 896:
+            raise ValueError("The deployment contract uses 896-pixel coordinates")
         self.dim = int(config.get("dim", 128))
         self.image_size = float(config.get("image_size", 896))
         self.patch_size = int(config.get("patch_size", 5))
@@ -175,4 +184,6 @@ class OnnxV35Refiner(nn.Module):
 @jaxtyped(typechecker=beartype)
 def reference_depth(z_raw: Float[Tensor, "batch frames tracks"]) -> Float[Tensor, ""]:
     """Host-side normalization; torch.median selects the lower middle value."""
+    if z_raw.numel() == 0 or not torch.isfinite(z_raw).all():
+        raise ValueError("z_raw must be nonempty and finite")
     return z_raw.detach().flatten().median() + 1e-6

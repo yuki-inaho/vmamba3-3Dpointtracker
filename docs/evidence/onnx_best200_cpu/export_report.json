@@ -1,0 +1,195 @@
+{
+  "success": true,
+  "checkpoint_step": 200,
+  "checkpoint_sha256": "bcddf045311b76a91bc772e35901acbdb99f397b752ee0ba4beacb3fb1ded5f4",
+  "file": "tracker_mamba3_daoff_best200.onnx",
+  "onnx_bytes": 32669442,
+  "onnx_sha256": "cd9c4f84859589796fdb50e22ec6d736cb421d3e75f268ab16b58eeb08009043",
+  "opset": 18,
+  "node_count": 1547,
+  "operator_domains": [
+    ""
+  ],
+  "single_file": true,
+  "checker_full_check": true,
+  "input_schema": [
+    {
+      "name": "ray",
+      "type": "tensor(float)",
+      "shape": [
+        "batch",
+        "frames",
+        "tracks",
+        2
+      ]
+    },
+    {
+      "name": "z_raw",
+      "type": "tensor(float)",
+      "shape": [
+        "batch",
+        "frames",
+        "tracks"
+      ]
+    },
+    {
+      "name": "visibility",
+      "type": "tensor(float)",
+      "shape": [
+        "batch",
+        "frames",
+        "tracks"
+      ]
+    },
+    {
+      "name": "uv",
+      "type": "tensor(float)",
+      "shape": [
+        "batch",
+        "frames",
+        "tracks",
+        2
+      ]
+    },
+    {
+      "name": "depth_map",
+      "type": "tensor(float)",
+      "shape": [
+        "batch",
+        "frames",
+        "depth_height",
+        "depth_width"
+      ]
+    },
+    {
+      "name": "dino_features",
+      "type": "tensor(float)",
+      "shape": [
+        "batch",
+        "frames",
+        384,
+        28,
+        28
+      ]
+    },
+    {
+      "name": "intrinsics",
+      "type": "tensor(float)",
+      "shape": [
+        "batch",
+        3,
+        3
+      ]
+    },
+    {
+      "name": "z_ref",
+      "type": "tensor(float)",
+      "shape": []
+    }
+  ],
+  "tracker_tensors_loaded": 50,
+  "tracker_parameters": 8117988,
+  "all_tracker_weights_bitwise_equal": true,
+  "runtime": "1.30.0",
+  "providers": [
+    "CPUExecutionProvider"
+  ],
+  "torch": "2.12.1+cu130",
+  "python": "3.12.3",
+  "numpy": "1.26.4",
+  "verification": [
+    {
+      "batch": 1,
+      "frames": 1,
+      "tracks": 1,
+      "depth_shape": [
+        24,
+        32
+      ],
+      "max_abs_error": {
+        "xyz": 2.384185791015625e-07,
+        "uv_refined": 0.0,
+        "vis_logits": 3.725290298461914e-08,
+        "delta_uv": 5.587935447692871e-09
+      },
+      "chunk_1_max_abs_error": {
+        "xyz": 0.0,
+        "uv_refined": 0.0,
+        "vis_logits": 0.0,
+        "delta_uv": 0.0
+      },
+      "all_outputs_finite": true
+    },
+    {
+      "batch": 1,
+      "frames": 8,
+      "tracks": 7,
+      "depth_shape": [
+        32,
+        48
+      ],
+      "max_abs_error": {
+        "xyz": 3.814697265625e-06,
+        "uv_refined": 0.0,
+        "vis_logits": 4.470348358154297e-07,
+        "delta_uv": 3.725290298461914e-08
+      },
+      "chunk_1_max_abs_error": {
+        "xyz": 0.0,
+        "uv_refined": 0.0,
+        "vis_logits": 0.0,
+        "delta_uv": 0.0
+      },
+      "all_outputs_finite": true
+    },
+    {
+      "batch": 2,
+      "frames": 13,
+      "tracks": 3,
+      "depth_shape": [
+        48,
+        32
+      ],
+      "max_abs_error": {
+        "xyz": 3.337860107421875e-06,
+        "uv_refined": 0.0,
+        "vis_logits": 4.172325134277344e-07,
+        "delta_uv": 4.284083843231201e-08
+      },
+      "chunk_1_max_abs_error": {
+        "xyz": 0.0,
+        "uv_refined": 0.0,
+        "vis_logits": 0.0,
+        "delta_uv": 0.0
+      },
+      "all_outputs_finite": true
+    },
+    {
+      "batch": 1,
+      "frames": 128,
+      "tracks": 2,
+      "depth_shape": [
+        17,
+        23
+      ],
+      "max_abs_error": {
+        "xyz": 4.291534423828125e-06,
+        "uv_refined": 0.0,
+        "vis_logits": 4.842877388000488e-07,
+        "delta_uv": 3.026798367500305e-08
+      },
+      "chunk_1_max_abs_error": {
+        "xyz": 0.0,
+        "uv_refined": 0.0,
+        "vis_logits": 0.0,
+        "delta_uv": 0.0
+      },
+      "all_outputs_finite": true
+    }
+  ],
+  "elapsed_s": 1.800227007000018,
+  "rtol": 0.0002,
+  "atol": 5e-05,
+  "task_accuracy_verified": false,
+  "scope": "Actual checkpoint weights, synthetic inputs: portable FP32 vs ONNX FP32 only"
+}

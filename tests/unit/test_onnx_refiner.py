@@ -1,16 +1,21 @@
 """Check the export math against the independent upstream recurrent reference."""
 
 import ast
+import hashlib
 import math
 from pathlib import Path
-from typing import Optional, Tuple
+from typing import Optional
 
 import pytest
 import torch
 import torch.nn.functional as F
 from einops import repeat
 
-from mamba3_tracker.model.onnx_refiner import OnnxV35Refiner, reference_depth, siso_attention
+from mamba3_tracker.model.onnx_refiner import (
+    OnnxV35Refiner,
+    reference_depth,
+    siso_attention,
+)
 
 
 @pytest.fixture(scope="module")
@@ -18,12 +23,15 @@ def upstream_recurrence():
     root = Path(__file__).resolve().parents[2]
     source = root / "third_party/visionMamba3/third_party/mamba-ssm/tests/ops/triton/test_mamba3_siso.py"
     # Load the upstream reference alone; CPU tests do not import CUDA kernels.
+    expected = "b68ec350f557a4124516f7d1c916ec756a48389fed4387791aadb74492531e85"
+    assert hashlib.sha256(source.read_bytes()).hexdigest() == expected, "Upstream reference drift"
     tree = ast.parse(source.read_text())
     definition = next(node for node in tree.body if isinstance(node, ast.FunctionDef)
                       and node.name == "mamba3_siso_step_ref")
     namespace = {"torch": torch, "F": F, "math": math, "repeat": repeat,
-                 "Optional": Optional, "Tuple": Tuple}
-    exec(compile(ast.Module(body=[definition], type_ignores=[]), str(source), "exec"), namespace)
+                 "Optional": Optional, "Tuple": tuple}
+    # Execute only the named upstream reference after its complete source hash was verified.
+    exec(compile(ast.Module(body=[definition], type_ignores=[]), str(source), "exec"), namespace)  # noqa: S102
     return namespace["mamba3_siso_step_ref"]
 
 
@@ -39,7 +47,7 @@ def inputs(frames):
     return q, k, v, adt, dt, trap, angles, d, z
 
 
-@pytest.mark.parametrize("frames", [1, 8, 31])
+@pytest.mark.parametrize("frames", [1, 8, 31, 128, 257])
 def test_attention_matches_official_recurrence(upstream_recurrence, frames):
     q, k, v, adt, dt, trap, angles, d, z = inputs(frames)
     actual = siso_attention(q, k, v, adt, dt, trap, angles, d, z)

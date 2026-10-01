@@ -684,3 +684,9 @@ vis_headを学習済みの正解率モデルとして扱わない。
 `git diff --cached --check`、stage内容とmanifestの一致、remote mainとローカルHEADの一致を公開時に確認する。
 CLI認証に制約がある場合は、認証済みGitHub Appで同じblob/treeを作り、forceなしのref更新を使う。
 最終commitのSHAとremote照合結果は最終応答に記載する。未確認の公開成功を本書で先に宣言しない。
+
+## 8. 次担当者による実装記録（2026-10-01）
+
+ONNX／C++ CPU実装、厳格な入力・重み検査、paired評価不具合の修正、回帰試験、uv軽量環境を追加しました。
+詳細・コマンド・検証JSONは [best200 CPU実装記録](onnx_best200_cpu_20261001.md) を参照してください。
+**TR-4の固定9動画・元CUDA/BF16との実測比較は未達であり、6章の全DoD完了とは扱いません。**

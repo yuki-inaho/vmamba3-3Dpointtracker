@@ -73,6 +73,10 @@ include = [
     "src/mamba3_tracker/data/fixed_da.py",
     "src/mamba3_tracker/model/dino_encoder.py",
     "src/mamba3_tracker/model/onnx_refiner.py",
+    "src/mamba3_tracker/deployment",
+    "scripts/run_refiner_onnx.py",
+    "scripts/verify_refiner_cpp.py",
+    "scripts/validate_refiner_cpu.py",
     "scripts/export_refiner_onnx.py",
     "scripts/eval_onnx_refiner.py",
     "scripts/smoke_train_synthetic.py",
@@ -85,6 +89,7 @@ include = [
 "src/mamba3_tracker/train/profiling.py" = ["F722"]
 "src/mamba3_tracker/data/fixed_da.py" = ["F722"]
 "src/mamba3_tracker/model/onnx_refiner.py" = ["F722"]
+"src/mamba3_tracker/deployment/runtime.py" = ["F722"]
 
 [dependency-groups]
 dev = [
