@@ -1,0 +1,94 @@
+{
+  "device": "NVIDIA RTX A6000 48GB",
+  "torch": "2.12.1+cu130",
+  "synthetic": true,
+  "frozen_flow": "analytic, no WAFT inference",
+  "cache_outputs_and_final_weights": "bitwise identical",
+  "before": {
+    "synthetic": true,
+    "warmup_steps": 1,
+    "dimensions": {
+      "batch_size": 4,
+      "frames": 8,
+      "points": 128,
+      "image_size": 896,
+      "dino_image_size": 448
+    },
+    "stages": {
+      "flow_cache_tracking": {
+        "count": 3,
+        "median_seconds": 1.9131680438295007,
+        "mean_seconds": 1.9275627763321002
+      },
+      "refiner/forward": {
+        "count": 3,
+        "median_seconds": 0.12926842900924385,
+        "mean_seconds": 0.12850177839087942
+      },
+      "refiner/backward": {
+        "count": 3,
+        "median_seconds": 0.055047614965587854,
+        "mean_seconds": 0.055400184743727245
+      },
+      "refiner/optimizer": {
+        "count": 3,
+        "median_seconds": 0.01279255305416882,
+        "mean_seconds": 0.012549742280195156
+      },
+      "refiner/validation": {
+        "count": 3,
+        "median_seconds": 0.12320721801370382,
+        "mean_seconds": 0.12295797071419656
+      },
+      "refiner/checkpoint": {
+        "count": 3,
+        "median_seconds": 0.2576585018541664,
+        "mean_seconds": 0.2584207425825298
+      }
+    }
+  },
+  "after": {
+    "synthetic": true,
+    "warmup_steps": 1,
+    "dimensions": {
+      "batch_size": 4,
+      "frames": 8,
+      "points": 128,
+      "image_size": 896,
+      "dino_image_size": 448
+    },
+    "stages": {
+      "flow_cache_tracking": {
+        "count": 3,
+        "median_seconds": 0.43974269507452846,
+        "mean_seconds": 0.4699045486437778
+      },
+      "refiner/forward": {
+        "count": 3,
+        "median_seconds": 0.14691863185726106,
+        "mean_seconds": 0.14710640837438405
+      },
+      "refiner/backward": {
+        "count": 3,
+        "median_seconds": 0.05455412482842803,
+        "mean_seconds": 0.05443302324662606
+      },
+      "refiner/optimizer": {
+        "count": 3,
+        "median_seconds": 0.012157001998275518,
+        "mean_seconds": 0.012053017038851976
+      },
+      "refiner/validation": {
+        "count": 3,
+        "median_seconds": 0.14921795413829386,
+        "mean_seconds": 0.1567540009661267
+      },
+      "refiner/checkpoint": {
+        "count": 3,
+        "median_seconds": 0.24515598407015204,
+        "mean_seconds": 0.2481907723316302
+      }
+    }
+  },
+  "scope": "steady cached training plumbing; excludes real NPZ/JPEG loading and preprocessing startup"
+}

@@ -25,6 +25,8 @@ train:
     aux_lr: 0.0001
 frozen_cache:
   prewarm: true
+  dino_ram_gb: 2
+  flow_ram_gb: 4
   flow_batch: 32
   flow_max_batch: 64
   gpu_reserve_gb: 4

@@ -93,6 +93,8 @@ def main() -> None:
     ap.add_argument("--reference-manifest", type=Path,
                     default=Path("configs/v64_metric_reference_minival.json"))
     ap.add_argument("--dry-run", action="store_true")
+    ap.add_argument("--cache-only", action="store_true",
+                    help="Finish the DA-off phase and its reference evaluation, then exit")
     args = ap.parse_args()
     args.data_root = args.data_root.expanduser()
 
@@ -126,6 +128,7 @@ def main() -> None:
         "phase_1": {"config": str(args.cache_config), "out_dir": str(phase_one),
                     "warm_start": str(direct), "photometric_augment": False},
         "reference": str(args.reference_manifest),
+        "cache_only": args.cache_only,
         "phase_2": {"config": str(args.finetune_config),
                     "best_from": str(fine_cfg["train"]["init_best_from"]),
                     "photometric_augment": True},
@@ -142,6 +145,8 @@ def main() -> None:
     _run(train + ["--config", str(args.cache_config), "--data-root", str(args.data_root)])
     best = _best_checkpoint(phase_one)
     _reference(best, args.reference_manifest, args.data_root)
+    if args.cache_only:
+        return
     _run(train + ["--config", str(args.finetune_config), "--data-root", str(args.data_root)])
     _reference(_best_checkpoint(Path(fine_cfg["train"]["out_dir"])),
                args.reference_manifest, args.data_root)

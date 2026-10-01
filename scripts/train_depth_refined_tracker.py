@@ -1064,6 +1064,7 @@ def main() -> int:
         dino_cache = FrozenTensorCache(
             cache_root / "dino", f"dino:{fingerprint}:{model.dino.image_size}",
             max_bytes=float(frozen_cache_cfg.get("dino_gb", 2)) * 1e9,
+            ram_bytes=float(frozen_cache_cfg.get("dino_ram_gb", 0)) * 1e9,
             data_root=storage_root,
             total_bytes=float(frozen_cache_cfg.get("total_data_budget_gb", 60)) * 1e9,
         )
@@ -1075,6 +1076,7 @@ def main() -> int:
         flow_cache = FrozenTensorCache(
             cache_root / "flow", f"waft:{flow_fingerprint}:{json.dumps([architecture, flow_cfg], sort_keys=True)}",
             max_bytes=float(frozen_cache_cfg.get("flow_gb", 4)) * 1e9,
+            ram_bytes=float(frozen_cache_cfg.get("flow_ram_gb", 0)) * 1e9,
             data_root=storage_root,
             total_bytes=float(frozen_cache_cfg.get("total_data_budget_gb", 60)) * 1e9,
         )

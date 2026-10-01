@@ -354,11 +354,50 @@ Early stoppingの状態を引き継ぎます。
 refinerを更新します。初回生成と学習のflowはFP32、DINOは同じBF16条件を使ってkeyを一致させます。
 flowのmissは32 pairから最大64 pairで複数clipをまとめ、clip境界をまたぐpairは作りません。
 cache 20 GB +40 GB、raw/depth込み120 GB guardを維持します。
+第1段階はDINO 2 GB・flow 4 GBを上限とするCPU RAM LRUも併用します。
+flowは画像をbatch単位でCPUへ移し、frame hashと既存pair keyを再利用します。
+pair keyの形式を維持するため、最適化前に作ったdisk cacheも再生成せずに使えます。
+tracking用のCPU flowを直接読み出し、不要なGPU往復を減らします。
 この段階では固定時間窓以外のフレームを学習しないため、第2段階でランダム時間窓とDAを戻します。
 
 正常終了した第1段階bestを9/150の固定referenceで評価し、成功してからDA微調整へ引き継ぎます。
 微調整終了後も同じreferenceでbestを再評価します。ステージの失敗・中断・best欠落は次段階を
 起動しません。各runにK-best3+latest、早期停止、clip countとTensorBoardを保存します。
+DAなし段階とreference評価だけを完了させる場合は、runnerに`--cache-only`を付けてください。
+
+### GPU smoke profilingとコード品質
+
+GPU本学習を最新checkpointで停止してから、単独で計測します。人工データのflowを使うため、
+WAFT推論や実NPZ/JPEG読み込みの時間は含みません。時間計測は各stageでCUDAを同期し、
+初回compileを含むwarmup更新を除外します。通常のsmokeではこの同期を追加しません。
+
+```bash
+bash -ic '. scripts/cudnn_env.sh && uv run python scripts/smoke_train_synthetic.py \
+  --temporal-mixer official_mamba3 --steps 4 --frozen-cache --profile \
+  --profile-flow-cache --cache-ram-gb 1 --batch-size 4 --frames 8 --points 128 \
+  --image-size 896 --dino-image-size 448 --skip-visibility \
+  --out-dir result/profile_smoke'
+sh scripts/check_training_quality.sh
+```
+
+`timing.json`はstageごとの秒数、`cpu_profile.pstats`と`cpu_profile.txt`はCPU呼出し別の
+計測結果です。`summary.json`はfinite loss、完了stepとDINO cache一致の証跡です。
+beartype/jaxtypingでbatch・frame・point数と浮動小数点tensorを実行時検査し、tyは設定に列挙した
+training/cache/profiling経路を静的検査します。ruffと全unit testも上記品質コマンドで実行します。
+jaxtypingのshape文字列に限り、Python前方参照として扱うruff `F722`を当該ファイルで除外しています。
+
+RTX A6000、896画像/448 DINO、batch4/frame8/points128、warmup1+実測3更新で、
+flow cache/trackingの中央値は1.913秒から0.440秒になりました。refiner forwardは0.129秒から
+0.147秒で、refiner計算自体の高速化は主張しません。loss履歴と最終全重みはbitwise一致しました。
+集計を`doc/training_profile_20261001.json`に保存しています。本学習の速度は別途実測します。
+
+### 学習途中モデルの公開
+
+[step200 preview release](https://github.com/yuki-inaho/vmamba3-3Dpointtracker/releases/tag/mamba3-preview-20261001-step200)
+に、約32.5 MBの評価用tracker重み・config・SHA256・学習条件を公開しています。
+固定heldout15本の検証lossは0.1028277606で、このvariantの公式AJは公開時点では未測定です。
+optimizer/RNGとDINOv3 backboneは含みません。DINOは承認済みアカウントで別途取得してください。
+これはDAなし学習途中のartifactで、正式な全データ性能の報告ではありません。
 
 ## GPUを活用した生成と学習の並行実行
 

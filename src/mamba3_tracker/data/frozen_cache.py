@@ -3,10 +3,12 @@
 import hashlib
 import json
 import os
+from collections import OrderedDict
 from concurrent.futures import ThreadPoolExecutor
 from pathlib import Path
 
 import torch
+from beartype import beartype
 
 from .gpu_batch import AdaptiveBatchSize
 from .storage import tree_bytes
@@ -27,7 +29,7 @@ def module_fingerprint(module):
 
 
 class FrozenTensorCache:
-    def __init__(self, root, namespace, max_bytes, data_root=None, total_bytes=60e9):
+    def __init__(self, root, namespace, max_bytes, data_root=None, total_bytes=60e9, ram_bytes=0):
         self.group_root = Path(root).expanduser()
         self.root = (
             self.group_root
@@ -38,6 +40,33 @@ class FrozenTensorCache:
         self.data_root = Path(data_root).expanduser() if data_root else None
         self.total_bytes = int(total_bytes)
         self.hits = self.misses = 0
+        self.ram_hits = 0
+        self._ram: OrderedDict[str, tuple[torch.Tensor, ...]] = OrderedDict()
+        self.ram_size = 0
+        self.configure_ram(int(ram_bytes))
+
+    @beartype
+    def configure_ram(self, max_bytes: int) -> None:
+        if max_bytes < 0:
+            raise ValueError("RAM cache budget must be non-negative")
+        self.ram_limit = max_bytes
+        while self._ram and self.ram_size > self.ram_limit:
+            _, values = self._ram.popitem(last=False)
+            self.ram_size -= sum(t.numel() * t.element_size() for t in values)
+
+    def _remember(self, key: str, tensors: tuple[torch.Tensor, ...]) -> None:
+        size = sum(t.numel() * t.element_size() for t in tensors)
+        if not self.ram_limit or size > self.ram_limit:
+            return
+        previous = self._ram.pop(key, None)
+        if previous is not None:
+            self.ram_size -= sum(t.numel() * t.element_size() for t in previous)
+        while self._ram and self.ram_size + size > self.ram_limit:
+            _, values = self._ram.popitem(last=False)
+            self.ram_size -= sum(t.numel() * t.element_size() for t in values)
+        # Clone slices: a one-frame view must not retain a whole GPU/CPU batch.
+        self._ram[key] = tuple(t.detach().cpu().clone() for t in tensors)
+        self.ram_size += size
 
     def key(self, *tensors):
         digest = hashlib.sha256()
@@ -49,15 +78,22 @@ class FrozenTensorCache:
             digest.update(str(torch.get_autocast_dtype("cuda")).encode())
         return digest.hexdigest()
 
-    def get(self, key, device):
+    def get(self, key: str, device: torch.device | str) -> tuple[torch.Tensor, ...] | None:
+        if key in self._ram:
+            values = self._ram.pop(key)
+            self._ram[key] = values
+            self.hits += 1
+            self.ram_hits += 1
+            return tuple(t.to(device) for t in values)
         path = self.root / (key + ".pt")
         if not path.is_file():
             self.misses += 1
             return None
-        tensors = torch.load(path, map_location=device, weights_only=True)
+        tensors = torch.load(path, map_location="cpu", weights_only=True)
+        self._remember(key, tensors)
         os.utime(path, None)
         self.hits += 1
-        return tensors
+        return tuple(t.to(device) for t in tensors)
 
     def put(self, key, tensors):
         self.put_many([(key, tensors)])
@@ -96,6 +132,7 @@ class FrozenTensorCache:
             return
         for key, path in temporary.items():
             path.replace(self.root / (key + ".pt"))
+            self._remember(key, tuple(dict(items)[key]))
 
 
 class CachedFlow:
@@ -106,6 +143,13 @@ class CachedFlow:
         self.warm_values = {}
         self.last_peak_allocated = 0
         self._prefetched_clips = set()
+        self._batch_keys = {}
+        self._pair_aliases = OrderedDict()
+        self._held_images = None
+
+    @staticmethod
+    def _view_token(tensor):
+        return (tensor.data_ptr(), tuple(tensor.shape), tensor.stride(), tensor._version)
 
     @torch.no_grad()
     def prefetch_windows(self, windows):
@@ -123,6 +167,8 @@ class CachedFlow:
     def release_prefetch(self):
         self.warm_values.clear()
         self._prefetched_clips.clear()
+        self._batch_keys.clear()
+        self._held_images = None
 
     @torch.no_grad()
     def prefetch_clip(self, images):
@@ -144,8 +190,24 @@ class CachedFlow:
         self.warm_values.clear()
         self.last_peak_allocated = 0
         pending = []
+        # Hash each CPU frame once. Keep legacy pair keys, so disk caches stay usable.
+        cpu_images = images.detach().cpu()
+        frame_keys = [self.cache.key(frame.unsqueeze(0)) for frame in cpu_images]
+        self._batch_keys.clear()
+        self._held_images = images  # Hold storage until release; pointer keys cannot be recycled.
         for first, second in pairs:
-            key = self.cache.key(images[first:first + 1], images[second:second + 1])
+            alias = (frame_keys[first], frame_keys[second])
+            key = self._pair_aliases.get(alias)
+            if key is None:
+                key = self.cache.key(cpu_images[first:first + 1], cpu_images[second:second + 1])
+            else:
+                self._pair_aliases.move_to_end(alias)
+            self._pair_aliases[alias] = key
+            if len(self._pair_aliases) > 16384:
+                self._pair_aliases.popitem(last=False)
+            pointer_pair = (self._view_token(images[first:first + 1]),
+                            self._view_token(images[second:second + 1]))
+            self._batch_keys[pointer_pair] = key
             if not (self.cache.root / (key + ".pt")).is_file():
                 pending.append((first, second, key))
         writer = ThreadPoolExecutor(max_workers=1)
@@ -161,6 +223,7 @@ class CachedFlow:
             cuda = images.device.type == "cuda"
             free = torch.cuda.mem_get_info(images.device)[0] if cuda else None
             if cuda:
+                assert free is not None
                 free += torch.cuda.memory_reserved(images.device) - torch.cuda.memory_allocated(images.device)
             count = self.batch.size(len(pending) - offset, free)
             entries = pending[offset:offset + count]
@@ -195,13 +258,25 @@ class CachedFlow:
 
     @torch.no_grad()
     def flow(self, first, second):
-        key = self.cache.key(first, second)
+        return self._flow(first, second, first.device)
+
+    def _flow(self, first, second, device):
+        key = self._batch_keys.get((self._view_token(first), self._view_token(second))) if len(first) == len(second) == 1 else None
+        if key is None:
+            key = self.cache.key(first, second)
         if key in self.warm_values:
             self.cache.hits += 1
-            return self.warm_values[key].to(first.device)
-        found = self.cache.get(key, first.device)
+            return self.warm_values[key].to(device)
+        found = self.cache.get(key, device)
         if found is not None:
             return found[0]
         result = self.model.flow(first, second)
         self.cache.put(key, (result,))
-        return result
+        return result.to(device)
+
+    def consecutive_flows(self, images):
+        """Return CPU flow for the tracker without a GPU round trip on disk hits."""
+        self.prefetch_clip(images)
+        fwd = [self._flow(images[i:i + 1], images[i + 1:i + 2], "cpu") for i in range(len(images) - 1)]
+        bwd = [self._flow(images[i + 1:i + 2], images[i:i + 1], "cpu") for i in range(len(images) - 1)]
+        return fwd, bwd

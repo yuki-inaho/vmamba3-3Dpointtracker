@@ -36,6 +36,8 @@ dependencies = [
     "py7zr",
     "timm>=1.0.28",
     "tensorboard>=2.21.0",
+    "beartype>=0.22.9",
+    "jaxtyping>=0.3.11",
 ]
 
 [tool.uv.sources]
@@ -52,8 +54,32 @@ packages = ["src/mamba3_tracker", "src/searaft_flow"]
 testpaths = ["tests"]
 addopts = "-ra"
 
+[tool.ty.environment]
+extra-paths = ["scripts"]
+
+[tool.ty.src]
+# Incremental coverage for the staged training/cache/profiling path.
+include = [
+    "src/mamba3_tracker/train/profiling.py",
+    "src/mamba3_tracker/data/frozen_cache.py",
+    "src/mamba3_tracker/data/synthetic.py",
+    "src/mamba3_tracker/model/dino_encoder.py",
+    "scripts/smoke_train_synthetic.py",
+    "scripts/train_v64_staged.py",
+    "tests/unit/test_profile_cache.py",
+]
+
+[tool.ruff.lint.per-file-ignores]
+# jaxtyping shape strings are runtime metadata, not Python forward references.
+"src/mamba3_tracker/train/profiling.py" = ["F722"]
+
 [dependency-groups]
-dev = ["pytest>=7", "pytest-xdist", "ruff>=0.15.14"]
+dev = [
+    "pytest>=7",
+    "pytest-xdist",
+    "ruff>=0.15.14",
+    "ty>=0.0.84",
+]
 
 [tool.uv]
 # Keep the CUDA stack used by the synthetic refiner/head GPU smoke and DA3 probe.

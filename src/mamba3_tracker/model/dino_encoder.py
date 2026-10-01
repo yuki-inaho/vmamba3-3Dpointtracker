@@ -50,6 +50,9 @@ class DINOv2Encoder(nn.Module):
         list so it matches the existing propagator interface.
     """
 
+    imagenet_mean: Tensor
+    imagenet_std: Tensor
+
     def __init__(
         self,
         model_name: str = "facebook/dinov2-small",
@@ -89,10 +92,10 @@ class DINOv2Encoder(nn.Module):
         # `None` (the default) means v14/v15 behaviour: use only the last block.
         n_blocks = int(self.backbone.config.num_hidden_layers)
         if fuse_layers is not None and len(fuse_layers) > 1:
-            for l in fuse_layers:
-                if l < 0 or l >= n_blocks:
+            for layer_index in fuse_layers:
+                if layer_index < 0 or layer_index >= n_blocks:
                     raise ValueError(
-                        f"fuse_layer {l} out of range [0, {n_blocks})"
+                        f"fuse_layer {layer_index} out of range [0, {n_blocks})"
                     )
             self.fuse_layers = list(fuse_layers)
             # Per-layer LayerNorm — different DINO layers have very different
@@ -145,17 +148,20 @@ class DINOv2Encoder(nn.Module):
         if image.shape[-2:] != (self.image_size, self.image_size):
             image = F.interpolate(image, size=(self.image_size, self.image_size),
                                   mode="bilinear", align_corners=False)
-        keys = [cache.key(frame) for frame in image]
-        values = [cache.get(key, image.device) for key in keys]
+        # One D2H copy for hashing, then one H2D copy for stacked feature maps.
+        cpu_images = image.detach().cpu()
+        keys = [cache.key(frame) for frame in cpu_images]
+        values = [cache.get(key, "cpu") for key in keys]
         missing = [i for i, value in enumerate(values) if value is None]
         if missing:
             feats, classes = self._forward_one_image_batch_uncached(image[missing])
             items = []
             for j, i in enumerate(missing):
-                values[i] = (feats[j], classes[j])
+                values[i] = (feats[j].cpu(), classes[j].cpu())
                 items.append((keys[i], values[i]))
             cache.put_many(items)
-        return torch.stack([value[0] for value in values]), torch.stack([value[1] for value in values])
+        return (torch.stack([value[0] for value in values]).to(image.device),
+                torch.stack([value[1] for value in values]).to(image.device))
 
     def _forward_one_image_batch_uncached(self, image: Tensor) -> tuple[Tensor, Tensor]:
         """Args:  image (B, 3, H, W) in [0, 1].
@@ -196,8 +202,9 @@ class DINOv2Encoder(nn.Module):
                 tokens = out.last_hidden_state[:, self._n_prefix_tokens:, :]
             else:
                 parts = []
-                for norm, l in zip(self.fuse_norms, self.fuse_layers):
-                    h_l = out.hidden_states[l + 1][:, self._n_prefix_tokens:, :]
+                assert self.fuse_norms is not None and self.fuse_layers is not None
+                for norm, layer_index in zip(self.fuse_norms, self.fuse_layers):
+                    h_l = out.hidden_states[layer_index + 1][:, self._n_prefix_tokens:, :]
                     parts.append(norm(h_l))
                 tokens = self.fuse_proj(torch.cat(parts, dim=-1))
             B_sub, P, D = tokens.shape

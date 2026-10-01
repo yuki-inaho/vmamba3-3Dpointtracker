@@ -3,7 +3,7 @@
 import torch
 
 
-def synthetic_batch(seed=0, frames=4, points=12, image_size=64, device="cpu"):
+def synthetic_batch(seed=0, frames=4, points=12, image_size=64, device="cpu", batch_size=1):
     generator = torch.Generator().manual_seed(seed)
     starts = torch.rand(1, 1, points, 2, generator=generator) * (image_size * 0.4)
     starts += image_size * 0.3
@@ -41,8 +41,8 @@ def synthetic_batch(seed=0, frames=4, points=12, image_size=64, device="cpu"):
     bwd[:, 0] = 0
     vis[:, frames // 2, ::3] = 0
     fwd[:, frames // 2, ::3] += 5.0
-    return {
-        name: value.to(device)
+    result = {
+        name: value.repeat(batch_size, *([1] * (value.ndim - 1))).to(device)
         for name, value in {
             "ray": ray,
             "z_raw": z_raw,
@@ -56,3 +56,8 @@ def synthetic_batch(seed=0, frames=4, points=12, image_size=64, device="cpu"):
             "flow_bwd": bwd,
         }.items()
     }
+    if batch_size > 1:
+        # Distinct frames prevent unrealistically perfect cache deduplication in profiles.
+        offset = torch.arange(batch_size * frames, device=device).view(batch_size, frames, 1, 1, 1)
+        result["images"] = (result["images"] + offset * 0.0001).clamp(0, 1)
+    return result
