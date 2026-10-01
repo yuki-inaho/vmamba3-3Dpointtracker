@@ -1,0 +1,31 @@
+{
+  "synthetic": true,
+  "results": {
+    "refiner": {
+      "start_step": 0,
+      "completed_step": 8,
+      "baseline_val_loss": 0.1586707979440689,
+      "final_val_loss": 0.023381885141134262,
+      "checkpoints": 4
+    }
+  },
+  "cache": {
+    "equal": true,
+    "hits": 176,
+    "misses": 40
+  },
+  "fixed_da_patterns": [
+    "darker",
+    "brighter",
+    "softer",
+    "harder"
+  ],
+  "flow_training_misses": 0,
+  "scope": "Synthetic GPU smoke; analytic frozen flow, real frozen DINO and official Mamba-3 refiner. Not a real-data performance score.",
+  "quality": {
+    "unit_tests": 52,
+    "ruff": "pass",
+    "ty": "pass",
+    "uv_lock": "pass"
+  }
+}

@@ -50,6 +50,8 @@ def main():
     parser.add_argument("--profile-flow-cache", action="store_true",
                         help="Measure real tracking/cache plumbing using analytic frozen flow")
     parser.add_argument("--cache-ram-gb", type=float, default=0)
+    parser.add_argument("--fixed-da-config", type=Path,
+                        help="Prewarm and train on the finite DA patterns from this recipe")
     parser.add_argument("--temporal-mixer", choices=["vssd_cross", "official_mamba3"],
                         default="vssd_cross")
     parser.add_argument("--mamba3-checkpoint", type=Path,
@@ -87,6 +89,16 @@ def main():
     batch_options = dict(device=args.device, frames=args.frames, points=args.points,
                          image_size=args.image_size, batch_size=args.batch_size)
     train_batch = synthetic_batch(args.seed, **batch_options)
+    train_variants = [train_batch]
+    pattern_names = []
+    if args.fixed_da_config:
+        from mamba3_tracker.data.fixed_da import apply_pattern, parse_patterns
+        from mamba3_tracker.train.config import load_config
+        patterns = parse_patterns(load_config(args.fixed_da_config)["data"]["fixed_da"]["patterns"])
+        train_variants = [{**train_batch, "images": torch.stack([
+            apply_pattern(images, p) for images in train_batch["images"]
+        ])} for p in patterns]
+        pattern_names = [p.name for p in patterns]
     val_batch = synthetic_batch(args.seed + 1, **batch_options)
     check_training_inputs(train_batch["images"], train_batch["ray"],
                           train_batch["depth_map"], train_batch["target"])
@@ -112,6 +124,14 @@ def main():
                           for a, b, c in zip(reference, first, repeated))
         if not cache_equal:
             raise AssertionError("Artificial DINO cache changed frozen outputs")
+        for variant in train_variants:
+            images = variant["images"].flatten(0, 1)
+            uncached = dino_encoder._forward_one_image_batch_uncached(images)
+            first = dino_encoder._forward_one_image_batch(images)
+            repeated = dino_encoder._forward_one_image_batch(images)
+            if not all(torch.equal(a, b) and torch.equal(a, c)
+                       for a, b, c in zip(uncached, first, repeated)):
+                raise AssertionError("Fixed DA cached DINO features differ from live features")
     results = {}
     flow_probe = None
     if args.profile_flow_cache:
@@ -141,8 +161,13 @@ def main():
             subsets=["synthetic"] * args.batch_size, depth=train_batch["depth_map"],
         )
         _run_flow_batch(probe_flow, tracking_batch, torch.device(args.device), args.image_size, .05, 1)
+        for variant in train_variants:
+            probe_flow.prefetch_windows(variant["images"] * 255.0)
+            probe_flow.release_prefetch()
+        flow_misses_after_prewarm = probe_cache.misses
 
         def flow_probe():
+            tracking_batch.images = active_batch["images"]
             return _run_flow_batch(probe_flow, tracking_batch, torch.device(args.device),
                                    args.image_size, .05, 1)
 
@@ -190,6 +215,7 @@ def main():
         val_loss = baseline
         writer.add_scalar("val/loss", baseline, start)
         for step in range(start + 1, args.steps + 1):
+            active_batch = train_variants[(step - 1) % len(train_variants)]
             if args.profile:
                 cpu_profile.enable()
             model.train()
@@ -199,7 +225,7 @@ def main():
                 with timer.measure("flow_cache_tracking", step):
                     flow_probe()
             with timer.measure(name + "/forward", step):
-                train_loss = loss(train_batch)
+                train_loss = loss(active_batch)
             if not torch.isfinite(train_loss):
                 raise FloatingPointError("non-finite artificial-data loss")
             with timer.measure(name + "/backward", step):
@@ -248,7 +274,10 @@ def main():
              "cache": None if feature_cache is None else {
                  "equal": cache_equal, "hits": feature_cache.hits,
                  "misses": feature_cache.misses,
-             }, "pretrained_mamba3": pretrained_report}, indent=2
+             }, "pretrained_mamba3": pretrained_report,
+             "fixed_da_patterns": pattern_names,
+             "flow_training_misses": probe_cache.misses - flow_misses_after_prewarm
+             if args.profile_flow_cache else None}, indent=2
         )
     )
     if args.profile:

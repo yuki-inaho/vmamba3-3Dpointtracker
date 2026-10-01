@@ -1,0 +1,31 @@
+# Four additional deterministic DA patterns; existing raw data/cache stay usable.
+extends: v64_official_mamba3_cache_phase.yaml
+model:
+  pretrained_mamba3: false
+data:
+  photometric_augment: true
+  fixed_da:
+    patterns:
+      - {name: darker, brightness: 0.8, contrast: 1.0}
+      - {name: brighter, brightness: 1.2, contrast: 1.0}
+      - {name: softer, brightness: 1.0, contrast: 0.8}
+      - {name: harder, brightness: 1.0, contrast: 1.2}
+    block_clips: 32
+    repeats: 2
+    prewarm_batch: 16
+train:
+  out_dir: result/v64_official_mamba3_da4_cached
+  init_ckpt: false
+  init_best_from: result/v64_official_mamba3_cache_phase
+  steps: 250
+  clip_budget: 4096
+  early_stop_patience: 3
+  early_stop_min_delta: 0.001
+  val_every: 10
+  num_workers: 2
+  amuse:
+    muon_lr: 0.0005
+    aux_lr: 0.00005
+frozen_cache:
+  prewarm: false
+  block_prewarm: true

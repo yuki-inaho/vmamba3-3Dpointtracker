@@ -14,6 +14,7 @@ import torch
 from torch.utils.data import Dataset
 
 from .tapvid3d import SUBSETS, list_clips, load_clip, peek_clip_F
+from .fixed_da import DAIndex, PhotometricPattern, apply_pattern
 
 
 @dataclass
@@ -34,6 +35,8 @@ class TrackingBatch:
     frame_start: list[int] = field(default_factory=list)
     query_idx: list[torch.Tensor] = field(default_factory=list)
     depth: torch.Tensor | None = None  # v31: (B, F, Hd, Wd) cached DA3 metric depth
+    da_index: DAIndex | None = None
+    augmentation_ids: list[int] = field(default_factory=list)
 
 
 class TAPVid3DDataset(Dataset):
@@ -57,6 +60,7 @@ class TAPVid3DDataset(Dataset):
         da3_depth_root: str | Path | None = None,
         reanchor_window: bool = True,
         fixed_window_seed: int | None = None,
+        fixed_patterns: tuple[PhotometricPattern, ...] | None = None,
     ) -> None:
         self.clip_paths = list(clip_paths)
         self.window_size = window_size
@@ -69,13 +73,23 @@ class TAPVid3DDataset(Dataset):
         self.reanchor_window = bool(reanchor_window)
         self._rng = random.Random(seed)
         self.fixed_window_seed = fixed_window_seed
-        if fixed_window_seed is not None and augment:
+        self.fixed_patterns = fixed_patterns
+        if fixed_patterns and (not augment or fixed_window_seed is None):
+            raise ValueError("Fixed DA requires augmentation and a fixed window seed")
+        if fixed_window_seed is not None and augment and not fixed_patterns:
             raise ValueError("fixed cache windows require photometric augmentation off")
 
     def __len__(self) -> int:
         return len(self.clip_paths)
 
-    def __getitem__(self, idx: int) -> dict:
+    def __getitem__(self, idx: int | DAIndex) -> dict:
+        da_index = idx if isinstance(idx, DAIndex) else None
+        if da_index is not None:
+            idx = da_index.clip
+            if not self.fixed_patterns or not 0 <= da_index.pattern < len(self.fixed_patterns):
+                raise ValueError("Unknown fixed DA pattern")
+        elif self.fixed_patterns:
+            raise ValueError("Fixed DA dataset requires explicit pattern indices")
         # Pick the window first, then decode only those JPEG frames. Decoding
         # the whole clip up-front and slicing afterwards burns ~566 MB per
         # drivetrack __getitem__ call (1280×1920×3 float32 × 24 frames) and
@@ -115,7 +129,9 @@ class TAPVid3DDataset(Dataset):
                 mode="bilinear", align_corners=False,
             )
 
-        if self.augment:
+        if da_index is not None:
+            images = apply_pattern(images, self.fixed_patterns[da_index.pattern])
+        elif self.augment:
             images = _photometric_aug(images, self._rng)
 
         # Subselect queries if there are more than `max_queries`.
@@ -200,6 +216,7 @@ class TAPVid3DDataset(Dataset):
             "subset": clip.subset,
             "frame_start": int(start),
             "query_idx": orig_idx,
+            "da_index": da_index,
         }
         if self.da3_depth_root is not None:
             depth_path = self.da3_depth_root / clip.subset / (clip.clip_id + ".npz")
@@ -218,6 +235,8 @@ class TAPVid3DDataset(Dataset):
                             np.asarray(dd["depth"][start:end])
                         ).float()
             except Exception as e:
+                if da_index is not None:
+                    raise RuntimeError(f"Fixed DA depth cache is invalid: {depth_path}") from e
                 # A corrupt/truncated depth cache for one clip must not crash training
                 # (a single bad .npz once wedged v42 in an infinite restart loop). Skip
                 # this clip and draw the next one instead.
@@ -279,6 +298,8 @@ def collate_tracking(items: list[dict]) -> TrackingBatch:
         frame_start=frame_start,
         query_idx=query_idx,
         depth=depth,
+        da_index=items[0].get("da_index"),
+        augmentation_ids=[it["da_index"].pattern for it in items if it.get("da_index") is not None],
     )
 
 

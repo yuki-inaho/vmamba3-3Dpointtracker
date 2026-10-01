@@ -95,7 +95,11 @@ def main() -> None:
     ap.add_argument("--dry-run", action="store_true")
     ap.add_argument("--cache-only", action="store_true",
                     help="Finish the DA-off phase and its reference evaluation, then exit")
+    ap.add_argument("--finetune-only", action="store_true",
+                    help="Use a completed, reference-verified phase one and only run DA tuning")
     args = ap.parse_args()
+    if args.cache_only and args.finetune_only:
+        ap.error("--cache-only and --finetune-only are mutually exclusive")
     args.data_root = args.data_root.expanduser()
 
     cache_cfg = load_config(args.cache_config)
@@ -107,7 +111,11 @@ def main() -> None:
     if fine_cfg["data"].get("photometric_augment", False) is not True:
         raise ValueError("fine-tune phase requires data.photometric_augment: true")
     if fine_cfg.get("frozen_cache", {}).get("enabled", False):
-        raise ValueError("fine-tune phase must not use frozen cache with DA")
+        if not (fine_cfg["data"].get("fixed_da")
+                and fine_cfg["data"].get("fixed_window_seed") is not None
+                and fine_cfg["frozen_cache"].get("block_prewarm", False)
+                and not fine_cfg["frozen_cache"].get("prewarm", False)):
+            raise ValueError("cached DA requires fixed patterns/windows and block prewarm")
     if not fine_cfg["train"].get("init_best_from"):
         raise ValueError("fine-tune phase requires train.init_best_from")
     phase_one = Path(cache_cfg["train"]["out_dir"]).expanduser()
@@ -129,6 +137,7 @@ def main() -> None:
                     "warm_start": str(direct), "photometric_augment": False},
         "reference": str(args.reference_manifest),
         "cache_only": args.cache_only,
+        "finetune_only": args.finetune_only,
         "phase_2": {"config": str(args.finetune_config),
                     "best_from": str(fine_cfg["train"]["init_best_from"]),
                     "photometric_augment": True},
@@ -142,9 +151,13 @@ def main() -> None:
 
     signal.signal(signal.SIGTERM, terminate)
     train = [sys.executable, "scripts/train_depth_refined_tracker.py"]
-    _run(train + ["--config", str(args.cache_config), "--data-root", str(args.data_root)])
-    best = _best_checkpoint(phase_one)
-    _reference(best, args.reference_manifest, args.data_root)
+    if args.finetune_only:
+        best = _best_checkpoint(phase_one)
+        _verify_reference(best.parent / "reference_eval" / best.stem, args.reference_manifest)
+    else:
+        _run(train + ["--config", str(args.cache_config), "--data-root", str(args.data_root)])
+        best = _best_checkpoint(phase_one)
+        _reference(best, args.reference_manifest, args.data_root)
     if args.cache_only:
         return
     _run(train + ["--config", str(args.finetune_config), "--data-root", str(args.data_root)])

@@ -47,6 +47,7 @@ from mamba3_tracker.data.dataset import (
     official_train_test_split,
 )
 from mamba3_tracker.data.tapvid3d import load_clip
+from mamba3_tracker.data.fixed_da import DAIndex, FixedDABatchSampler, parse_patterns
 from mamba3_tracker.model.depth_refined_tracker import (
     Mamba3DepthScaleRefiner,
     Mamba3V73,
@@ -788,6 +789,8 @@ def main() -> int:
         da3_depth_root=da3_depth_root,
         reanchor_window=reanchor_window,
         fixed_window_seed=data_cfg.get("fixed_window_seed"),
+        fixed_patterns=parse_patterns(data_cfg["fixed_da"]["patterns"])
+        if data_cfg.get("fixed_da") else None,
     )
     val_ds = TAPVid3DDataset(
         val_clips,
@@ -804,7 +807,22 @@ def main() -> int:
                           pin_memory=True, persistent_workers=False, worker_init_fn=seed_tracking_worker)
     if loader_options["num_workers"] > 0:
         loader_options["prefetch_factor"] = int(train_cfg.get("prefetch_factor", 1))
-    if train_cfg.get("bucket_batches", False):
+    fixed_da_sampler = None
+    if train_ds.fixed_patterns:
+        fixed_da_cfg = data_cfg["fixed_da"]
+        if int(train_cfg.get("accum", 1)) != 1:
+            raise ValueError("Fixed DA currently requires one batch per optimizer update")
+        fixed_da_sampler = FixedDABatchSampler(
+            train_ds, len(train_ds.fixed_patterns), int(train_cfg["batch"]),
+            int(fixed_da_cfg.get("block_clips", 32)), int(fixed_da_cfg.get("repeats", 2)),
+            int(train_cfg["seed"]),
+            recipe_signature=json.dumps({"patterns": fixed_da_cfg["patterns"],
+                                         "window_seed": train_ds.fixed_window_seed,
+                                         "window": train_ds.window_size, "image_size": image_size},
+                                        sort_keys=True),
+        )
+        loader_options["batch_sampler"] = fixed_da_sampler
+    elif train_cfg.get("bucket_batches", False):
         loader_options["batch_sampler"] = DepthBucketBatchSampler(train_ds, int(train_cfg["batch"]))
     else:
         loader_options.update(batch_size=int(train_cfg["batch"]), shuffle=True)
@@ -1052,6 +1070,10 @@ def main() -> int:
         print("[train] Mamba3DepthRefiner  loss: TrackingLossV33 (3D-only)")
 
     frozen_cache_cfg = cfg.get("frozen_cache", {})
+    if fixed_da_sampler is not None and (not frozen_cache_cfg.get("enabled", False)
+                                        or not frozen_cache_cfg.get("block_prewarm", False)
+                                        or frozen_cache_cfg.get("prewarm", False)):
+        raise ValueError("Fixed DA requires frozen cache and block_prewarm, without full prewarm")
     if frozen_cache_cfg.get("enabled", False):
         if version != "v35" or not hasattr(model, "dino") or flow_source != "waft_live":
             raise ValueError("frozen cache mode currently supports the v35 refiner")
@@ -1221,11 +1243,19 @@ def main() -> int:
     print(f"[train] trainable after freezing: {_n_train/1e6:.3f}M across {_trainable_names}", flush=True)
 
     latest = _find_latest_ckpt(args.out_dir)
+    da_usage = {"patterns": {}, "pairs": set()}
     if latest is not None:
         st = restore_checkpoint(latest, model, optim, sched, device=device)
         if st.get("extra", {}).get("dataset_rng"):
             train_ds._rng.setstate(st["extra"]["dataset_rng"])
         start_step = int(st["step"])
+        if fixed_da_sampler is not None:
+            da_state = st.get("extra", {}).get("fixed_da_sampler")
+            if da_state is None:
+                raise ValueError("Fixed DA resume checkpoint lacks sampler state")
+            fixed_da_sampler.restore(da_state)
+            usage = st.get("extra", {}).get("fixed_da_usage", {})
+            da_usage = {"patterns": usage.get("patterns", {}), "pairs": set(usage.get("pairs", []))}
         clip_state = st.get("extra", {}).get("clip_budget")
         if clip_state is not None:
             clip_budget = ClipBudget(**clip_state)
@@ -1259,12 +1289,19 @@ def main() -> int:
                                 "dataset_rng": train_ds._rng.getstate(),
                                 "early_stop": stopper.state_dict(),
                                 "clip_budget": clip_budget.state_dict(),
+                                "fixed_da_sampler": fixed_da_sampler.state_dict()
+                                if fixed_da_sampler is not None else None,
+                                "fixed_da_usage": {"patterns": da_usage["patterns"],
+                                                   "pairs": sorted(da_usage["pairs"])},
                             })
         (args.out_dir / "training_status.json").write_text(json.dumps({
             "step": completed_step, "max_steps": n_steps, "early_stop": stopper.state_dict(),
             "clip_budget": clip_budget.state_dict(),
             "reason": "early_stopping" if stopper.stopped else "clip_budget" if clip_budget.exhausted else "max_steps" if completed_step >= n_steps else "running",
             "best_checkpoint": manager.best[0]["path"] if manager.best else None,
+            "fixed_da": fixed_da_sampler.state_dict() if fixed_da_sampler is not None else None,
+            "fixed_da_pattern_counts": da_usage["patterns"],
+            "fixed_da_unique_clip_patterns": len(da_usage["pairs"]),
         }, indent=2))
         return result
 
@@ -1297,6 +1334,7 @@ def main() -> int:
         print("[train] PREWARM complete; enabling refiner updates", flush=True)
         t0 = time.perf_counter()
     loader_iter = iter(loader)
+    warmed_da_block = None
     # Mean of every step in the log window, not the single step the log happens to land on. With
     # batch=1 the per-clip loss spans about 20x, so a lone sample carries no trend: v91's 24 logged
     # values ranged 0.036 to 0.760 and looked flat while the run was neither improving nor not.
@@ -1323,7 +1361,7 @@ def main() -> int:
         writer.add_scalar("data/train_clips", len(train_ds), step)
         writer.add_scalar("data/validation_clips", len(val_ds), step)
     while step < n_steps and not stopper.stopped and not clip_budget.exhausted:
-        if growing_pool and micro == 0 and step % int(split_cfg.get("refresh_steps", 5)) == 0:
+        if growing_pool and fixed_da_sampler is None and micro == 0 and step % int(split_cfg.get("refresh_steps", 5)) == 0:
             refreshed, fixed_val = growing_pool.snapshot()
             if fixed_val != val_clips:
                 raise ValueError("validation membership changed during training")
@@ -1345,6 +1383,37 @@ def main() -> int:
         except StopIteration:
             loader_iter = iter(loader)
             batch = next(loader_iter)
+        if fixed_da_sampler is not None:
+            index = batch.da_index
+            assert index is not None
+            block_key = (index.epoch, index.block)
+            if warmed_da_block != block_key:
+                warm_start = time.perf_counter()
+                misses_before = (dino_cache.misses, flow_cache.misses)
+                warm_batch = int(data_cfg["fixed_da"].get("prewarm_batch", 16))
+                warm_indices = [DAIndex(i, p, index.block) for p in range(len(train_ds.fixed_patterns))
+                                for i in index.block]
+                warm_loader = DataLoader(train_ds, batch_size=warm_batch, sampler=warm_indices,
+                                         num_workers=0, collate_fn=collate_tracking)
+                with torch.no_grad():
+                    for warm_i, warm in enumerate(warm_loader, 1):
+                        warm_images = warm.images.to(device)
+                        flow_model.prefetch_windows(warm_images * 255.0)
+                        flow_model.release_prefetch()
+                        with torch.autocast(device.type, dtype=amp_dtype, enabled=use_amp):
+                            model.dino.forward_video(warm_images)
+                        del warm_images, warm
+                        print(f"[train] DA BLOCK PREWARM batch {warm_i}/{len(warm_loader)} "
+                              f"elapsed={time.perf_counter() - warm_start:.0f}s", flush=True)
+                elapsed = time.perf_counter() - warm_start
+                event = {"step": step, "epoch": index.epoch,
+                         "clips": len(index.block), "patterns": len(train_ds.fixed_patterns),
+                         "elapsed_s": elapsed, "dino_misses": dino_cache.misses - misses_before[0],
+                         "flow_misses": flow_cache.misses - misses_before[1]}
+                with (args.out_dir / "fixed_da_prewarm.jsonl").open("a") as log:
+                    log.write(json.dumps(event) + "\n")
+                print(f"[train] DA BLOCK PREWARM {json.dumps(event)}", flush=True)
+                warmed_da_block = block_key
         clips_in_update += len(batch.clip_ids)
 
         if device.type == "cuda":
@@ -1431,6 +1500,17 @@ def main() -> int:
             sched.step()
         optim.zero_grad(set_to_none=True)
         step += 1
+        if fixed_da_sampler is not None:
+            index = batch.da_index
+            assert index is not None
+            fixed_da_sampler.acknowledge(index.epoch, index.position)
+            for subset, clip_id, pattern_id in zip(batch.subsets, batch.clip_ids, batch.augmentation_ids):
+                name = train_ds.fixed_patterns[pattern_id].name
+                da_usage["patterns"][name] = da_usage["patterns"].get(name, 0) + 1
+                da_usage["pairs"].add(f"{subset}/{clip_id}:{name}")
+            for name, count in da_usage["patterns"].items():
+                writer.add_scalar(f"data/da_count/{name}", count, step)
+            writer.add_scalar("data/da_unique_clip_patterns", len(da_usage["pairs"]), step)
         clip_budget.consume(clips_in_update)
         clips_in_update = 0
 
@@ -1504,6 +1584,10 @@ def main() -> int:
                 writer.add_scalar(f"val/{key}", value, step)
             writer.flush()
             stopper.observe(cur, step)
+            if fixed_da_sampler is not None and not fixed_da_sampler.covered_once:
+                # Observe best scores, but allow every clip/variant to be used
+                # before counting bad checks against the patience budget.
+                stopper.since = 0
             writer.add_scalar("early_stop/bad_checks", stopper.since, step)
             save_checkpoint(step, score=cur)  # Persist the updated stopping state.
             if stopper.patience:

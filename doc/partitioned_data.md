@@ -358,7 +358,53 @@ cache 20 GB +40 GB、raw/depth込み120 GB guardを維持します。
 flowは画像をbatch単位でCPUへ移し、frame hashと既存pair keyを再利用します。
 pair keyの形式を維持するため、最適化前に作ったdisk cacheも再生成せずに使えます。
 tracking用のCPU flowを直接読み出し、不要なGPU往復を減らします。
-この段階では固定時間窓以外のフレームを学習しないため、第2段階でランダム時間窓とDAを戻します。
+この段階では固定時間窓以外のフレームを学習しません。従来の第2段階はランダム時間窓とDAを
+戻します。以下の4パターン固定DA方式では同じ時間窓を維持してキャッシュを再利用します。
+
+### 4パターンの固定DAをキャッシュして微調整
+
+`configs/v64_official_mamba3_da4_cached.yaml` はDAなしのheld-out best200から始める別runです。
+明るさ0.8/1.2（contrast1.0）、contrast0.8/1.2（brightness1.0）の4種類だけを使用します。
+係数は時間窓の全フレームで共通、同じclip/window/patternの画像はworkerや再開に依存せず一致します。
+原画像・既存DA3深度・3D教師を保持し、変換した画像のDINO特徴と双方向WAFT flowを保存します。
+変換画像自体を4コピー保存する必要はありません。DINO backbone/flowだけを凍結・キャッシュし、
+projection・official Mamba-3 refinerは学習します。
+
+全230clip×8frameでは現行形式で1pattern約23 GB、4pattern約92 GBの前処理出力になります。
+これを一度に120 GBのraw/depth/cache予算へ詰め込まず、depth gridが同じ最大32clipを区画として
+全4patternをGPU batchで生成し、その区画を2回シャッフル学習して次へ進みます。区画のworking
+setは最大約13 GBです。DINO20 GB/flow40 GBの既存LRUとraw/depth込み120 GB guardを維持します。
+CPU RAM cacheはDINO2 GB/flow4 GB、DataLoaderは2workersです。ホスト表示のRAM量ではなく
+cgroup上限約83 GBを考慮しています。区画から出たcacheはLRUで退避され、次巡回で不足分を再生成します。
+
+初回GPU生成時間は必要です。学習中の再利用による速度と生成込みの総時間を分けて報告します。
+固定DAの間は開始時のready train snapshotを保持し、新規データは次runで取り込みます。
+samplerの消化位置をcheckpointに保存し、DataLoaderの先読みはその位置を進めません。
+再開時にはclip manifest・DA係数・window設定の一致を検査します。query選択は学習中も変えられます。
+各DAの処理clip数・unique clip/pattern数はtraining_statusとTensorBoardへ保存します。
+全clip/patternの最初の一巡（区画内2回利用）が終わるまでEarly stoppingの悪化回数を数えません。
+その後は10stepごと、patience3/min_delta0.001。上限4096処理clip/250stepです。
+
+完了済みDAなし段階と既存9clip評価を検査して、DA段階だけを起動するコマンド:
+
+```bash
+bash -ic '. scripts/cudnn_env.sh && uv run python scripts/train_v64_staged.py \
+  --finetune-only --finetune-config configs/v64_official_mamba3_da4_cached.yaml'
+```
+
+出力は`result/v64_official_mamba3_da4_cached/`。`fixed_da_prewarm.jsonl`に区画ごとの生成時間と
+miss数を記録し、微調整終了後に同じ9/150 referenceをbest checkpointで自動評価します。
+DAなしbest200/検証15clipとの比較を維持し、最新stepを機械的に採用しません。
+
+人工データで4patternのDINO cache/live一致、生成後のflow再推論不要、finite loss/gradを検査:
+
+```bash
+bash -ic '. scripts/cudnn_env.sh && uv run python scripts/smoke_train_synthetic.py \
+  --temporal-mixer official_mamba3 --steps 8 --frozen-cache --profile-flow-cache \
+  --fixed-da-config configs/v64_official_mamba3_da4_cached.yaml --skip-visibility \
+  --out-dir result/fixed_da4_synthetic_smoke'
+sh scripts/check_training_quality.sh
+```
 
 正常終了した第1段階bestを9/150の固定referenceで評価し、成功してからDA微調整へ引き継ぎます。
 微調整終了後も同じreferenceでbestを再評価します。ステージの失敗・中断・best欠落は次段階を
