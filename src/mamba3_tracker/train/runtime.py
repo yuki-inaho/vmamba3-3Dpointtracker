@@ -114,6 +114,42 @@ def restore_rng(state):
         torch.cuda.set_rng_state_all([value.cpu() for value in state["cuda"]])
 
 
+class ClipBudget:
+    """Stop a run by examples consumed rather than by optimizer-update count.
+
+    A batch-size change must not silently multiply the training budget.  ``count``
+    is persisted in the checkpoint so a resumed run retains the same limit.
+    A non-positive ``limit`` disables the budget for legacy configurations.
+    """
+
+    def __init__(self, limit=0, count=0):
+        self.limit = int(limit)
+        self.count = int(count)
+        if self.limit < 0 or self.count < 0:
+            raise ValueError("clip budget and count must be nonnegative")
+
+    @property
+    def enabled(self):
+        return self.limit > 0
+
+    @property
+    def exhausted(self):
+        return self.enabled and self.count >= self.limit
+
+    @property
+    def remaining(self):
+        return max(0, self.limit - self.count) if self.enabled else None
+
+    def consume(self, clips):
+        clips = int(clips)
+        if clips < 1:
+            raise ValueError("an optimizer update must consume at least one clip")
+        self.count += clips
+
+    def state_dict(self):
+        return {"limit": self.limit, "count": self.count}
+
+
 def _atomic_json(path, value):
     tmp = path.with_suffix(path.suffix + ".tmp")
     tmp.write_text(json.dumps(value, indent=2, allow_nan=False))

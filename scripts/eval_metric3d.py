@@ -287,6 +287,10 @@ def main() -> int:
         "--split", choices=["all", "minival", "full_eval"], default="minival"
     )
     ap.add_argument("--max-clips-per-subset", type=int, default=0)
+    ap.add_argument(
+        "--clip-manifest", type=Path, default=None,
+        help="Exact official split members to score. Enables a fixed partial-minival monitoring set.",
+    )
     ap.add_argument("--max-frames", type=int, default=0)
     ap.add_argument("--image-size", type=int, default=896)
     ap.add_argument(
@@ -664,6 +668,14 @@ def main() -> int:
     allow = {
         s: (set(ALLOW.get(s, [])) if ALLOW is not None else None) for s in args.subsets
     }
+    manifest_clip_paths = None
+    if args.clip_manifest is not None:
+        from mamba3_tracker.eval.reference import manifest_paths
+
+        manifest_clip_paths = manifest_paths(
+            args.clip_manifest, args.data_root, args.split, args.subsets
+        )
+        print(f"[metric3d] fixed reference manifest {args.clip_manifest}", flush=True)
 
     metrics_root = args.out_dir / "metric_results"
     metrics_root.mkdir(parents=True, exist_ok=True)
@@ -673,8 +685,8 @@ def main() -> int:
     n_fail = 0
 
     for sub in args.subsets:
-        clips = list_clips(args.data_root, [sub])
-        if allow[sub] is not None:
+        clips = manifest_clip_paths[sub] if manifest_clip_paths is not None else list_clips(args.data_root, [sub])
+        if manifest_clip_paths is None and allow[sub] is not None:
             clips = [p for p in clips if p.name in allow[sub]]
         if args.max_clips_per_subset:
             clips = clips[: args.max_clips_per_subset]
@@ -779,6 +791,7 @@ def main() -> int:
     metrics_json = {
         "method": args.method,
         "split": args.split,
+        "clip_manifest": str(args.clip_manifest) if args.clip_manifest else None,
         "ckpt": str(args.ckpt) if args.ckpt else None,
         "per_subset": summary,
         "overall": overall,

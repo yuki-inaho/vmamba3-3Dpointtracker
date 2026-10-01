@@ -154,6 +154,53 @@ refinerのbestは固定heldout15clipのlossで選び、visibilityのbestは独�
 minivalは最終評価専用です。AMUSEは独自warmupと平均化を持つため外部WSD schedulerを使いません。
 検証・保存では平均重みXを用い、再開時にtrainモードYへ戻します。
 
+## 処理clip数による学習上限
+
+batch sizeを変更した後も、訓練量をoptimizer update数だけで比較しません。
+`train.clip_budget` は実際にoptimizerへ渡したclip数をcheckpointへ保存し、上限に達すると停止します。
+`configs/v64_amuse.yaml` は元のbatch=1・20,000 updateを20,000 clip相当として扱います。
+checkpoint 3,750までの旧runとbatch32 runの実測は4,989 clip相当なので、再開時は
+`resume_clip_count: 4989` から開始します。新しいcheckpoint以降は保存値が優先され、
+`data/processed_clips` と `data/remaining_clips` がTensorBoardへ出ます。
+`steps: 4400` は異常時の安全上限で、通常はclip budgetかEarly stoppingで先に終了します。
+
+## 論文指標を使う固定reference評価
+
+`scripts/eval_metric3d.py` はvendored official TAPVid-3D evaluatorで、二つの指標を並べて出します。
+
+- `overall.average_jaccard`: median scale補正とdepth-relative thresholdを使う公式leaderboardの3D-AJ。
+- `overall.metric_average_jaccard`: scale補正なし、1 cm〜2.56 mの固定thresholdを使う論文headlineのabsolute metric-AJ。
+
+論文の完全minival 150 clipsのheadlineは後者の **0.256** です。
+現在の容量制約では、rawとDA3 readyが揃うofficial minival各subset 3 clips、計9 clipsを
+`configs/v64_metric_reference_minival.json` に固定しました。これは訓練集合とは分離しています。
+同じ公式metric実装でチェックポイント間の変化を見るreferenceであり、9/150 clips・部分訓練230 clipsの値を
+0.256の再現/比較値と扱いません。full 150/150が揃った後だけ最終評価として比較します。
+
+```sh
+# readyなofficial minivalから固定referenceを再作成する場合。
+uv run python scripts/create_metric_reference_manifest.py \
+  --data-root ~/data --depth-root ~/data/tapvid3d_da3 --per-subset 3 \
+  --out configs/v64_metric_reference_minival.json
+
+# 停止済みcheckpointを評価する。学習と同じWAFT/DA3設定はckpt横のcfg.jsonから読む。
+. scripts/cudnn_env.sh
+bash -ic 'uv run python scripts/eval_metric3d.py --method v35 \
+  --ckpt result/v64_amuse/latest.pt --depth da3l --split minival \
+  --clip-manifest configs/v64_metric_reference_minival.json \
+  --out-dir result/v64_amuse/reference_eval/step_XXXX'
+
+# 0.256との差とreference範囲を機械可読で保存する。
+uv run python scripts/summarize_reference_metric.py \
+  --metrics result/v64_amuse/reference_eval/step_XXXX/metrics.json \
+  --manifest configs/v64_metric_reference_minival.json \
+  --out result/v64_amuse/reference_eval/step_XXXX/reference_progress.json
+```
+
+`metrics.json`、`summary.md`、`reference_progress.json` は常に同じcheckpoint pathと9本のmanifestを記録します。
+full評価では`--clip-manifest`を外し、150 clips・各subset50・failure 0を確認してから
+`metric_average_jaccard >= 0.256` を判定してください。
+
 ## 大バッチ学習とEarly stopping
 
 `configs/v64_amuse.yaml` は同じdepth gridのclipを最大32本まとめるbucket samplerを使います。

@@ -1,0 +1,28 @@
+{
+  "scope": "partial_minival_reference",
+  "split": "minival",
+  "files_by_subset": {
+    "adt": [
+      "Lite_release_recognition_GreenDecorationTall_seq031_6.npz",
+      "Apartment_release_decoration_seq138_6.npz",
+      "Apartment_release_multiskeleton_party_seq122_5.npz"
+    ],
+    "drivetrack": [
+      "tapvid3d_9142545919543484617_86_000_106_000_2_5AKc-TYQochsSWXpv376cA.npz",
+      "tapvid3d_2681180680221317256_1144_000_1164_000_2_erT5IMWqaVRCzF6oN66E7Q.npz",
+      "tapvid3d_10940952441434390507_1888_710_1908_710_2_ktWWj6EBhJZaj0IQHjSjZw.npz"
+    ],
+    "pstudio": [
+      "basketball_5.npz",
+      "softball_25.npz",
+      "boxes_22.npz"
+    ]
+  },
+  "clip_count": 9,
+  "paper_reference": {
+    "metric_average_jaccard": 0.256,
+    "full_minival_clips": 150,
+    "meaning": "paper headline absolute metric-AJ on the complete minival protocol"
+  },
+  "comparability": "This fixed partial minival set uses official metric machinery but is a monitoring reference only. It is not comparable to the 150-clip paper headline."
+}

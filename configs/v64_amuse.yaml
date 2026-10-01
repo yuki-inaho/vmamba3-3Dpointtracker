@@ -43,7 +43,11 @@ data:
     refresh_steps: 5
 train:
   out_dir: result/v64_amuse
-  steps: 20000
+  # Match the original batch=1, 20,000-update exposure budget.  The run had
+  # consumed 4,989 clips at checkpoint 3,750 before clip accounting existed.
+  steps: 4400
+  clip_budget: 20000
+  resume_clip_count: 4989
   warmup: 500
   decay: 2000
   ckpt_every: 10

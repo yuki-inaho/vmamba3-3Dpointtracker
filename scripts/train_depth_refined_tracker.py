@@ -36,7 +36,7 @@ from torch.utils.data import DataLoader
 from torch.utils.tensorboard import SummaryWriter
 
 from mamba3_tracker.train.runtime import (
-    CheckpointManager, build_optimizer, evaluation_weights, restore_checkpoint,
+    CheckpointManager, ClipBudget, build_optimizer, evaluation_weights, restore_checkpoint,
 )
 
 from mamba3_tracker.data.dataset import (
@@ -1079,6 +1079,7 @@ def main() -> int:
     dump_resolved(cfg_snapshot, args.out_dir / "cfg.json")
 
     start_step = 0
+    clip_budget = ClipBudget(int(train_cfg.get("clip_budget", 0)))
     if init_ckpt_cfg is not None and _find_latest_ckpt(args.out_dir) is None:
         # weights-only warm-start (no optim/sched/step); a resume ckpt in out_dir overrides.
         st = torch.load(
@@ -1165,6 +1166,16 @@ def main() -> int:
         if st.get("extra", {}).get("dataset_rng"):
             train_ds._rng.setstate(st["extra"]["dataset_rng"])
         start_step = int(st["step"])
+        clip_state = st.get("extra", {}).get("clip_budget")
+        if clip_state is not None:
+            clip_budget = ClipBudget(**clip_state)
+        elif clip_budget.enabled:
+            # Legacy checkpoints predate explicit clip accounting.  This value is
+            # intentionally configured, not guessed from the new batch size.
+            clip_budget = ClipBudget(
+                clip_budget.limit,
+                int(train_cfg.get("resume_clip_count", start_step)),
+            )
         history = list(st.get("history", []))
         mh_path = args.out_dir / "motion_history.json"
         if mh_path.exists():
@@ -1178,16 +1189,21 @@ def main() -> int:
                     [(row["step"], row["val"]["total"]) for row in history if "val" in row])
     print(f"[train] early-stop patience={stopper.patience}, min_delta={stopper.min_delta}; "
           f"best={stopper.best} at {stopper.best_step}, bad_checks={stopper.since}", flush=True)
+    if clip_budget.enabled:
+        print(f"[train] clip budget {clip_budget.count}/{clip_budget.limit}; "
+              f"remaining={clip_budget.remaining}", flush=True)
 
     def save_checkpoint(completed_step, score=None):
         result = manager.save(completed_step, model, optim, sched, history, cfg_snapshot,
                             score=score, extra={
                                 "dataset_rng": train_ds._rng.getstate(),
                                 "early_stop": stopper.state_dict(),
+                                "clip_budget": clip_budget.state_dict(),
                             })
         (args.out_dir / "training_status.json").write_text(json.dumps({
             "step": completed_step, "max_steps": n_steps, "early_stop": stopper.state_dict(),
-            "reason": "early_stopping" if stopper.stopped else "max_steps" if completed_step >= n_steps else "running",
+            "clip_budget": clip_budget.state_dict(),
+            "reason": "early_stopping" if stopper.stopped else "clip_budget" if clip_budget.exhausted else "max_steps" if completed_step >= n_steps else "running",
             "best_checkpoint": manager.best[0]["path"] if manager.best else None,
         }, indent=2))
         return result
@@ -1210,6 +1226,7 @@ def main() -> int:
     win_n = 0
     accum = max(1, int(train_cfg.get("accum", 1)))
     micro = 0
+    clips_in_update = 0
     if accum > 1:
         print(f"[train] gradient accumulation: {accum} clips per optimiser step", flush=True)
     if step == 0 and val_at_step0:
@@ -1227,7 +1244,7 @@ def main() -> int:
     if growing_pool:
         writer.add_scalar("data/train_clips", len(train_ds), step)
         writer.add_scalar("data/validation_clips", len(val_ds), step)
-    while step < n_steps and not stopper.stopped:
+    while step < n_steps and not stopper.stopped and not clip_budget.exhausted:
         if growing_pool and micro == 0 and step % int(split_cfg.get("refresh_steps", 5)) == 0:
             refreshed, fixed_val = growing_pool.snapshot()
             if fixed_val != val_clips:
@@ -1250,6 +1267,7 @@ def main() -> int:
         except StopIteration:
             loader_iter = iter(loader)
             batch = next(loader_iter)
+        clips_in_update += len(batch.clip_ids)
 
         if device.type == "cuda":
             torch.cuda.reset_peak_memory_stats(device)
@@ -1335,6 +1353,8 @@ def main() -> int:
             sched.step()
         optim.zero_grad(set_to_none=True)
         step += 1
+        clip_budget.consume(clips_in_update)
+        clips_in_update = 0
 
         if step % log_every == 0:
             lr = optim.param_groups[0]["lr"]
@@ -1372,6 +1392,9 @@ def main() -> int:
                 writer.add_scalar("cache/flow_oom_retries", flow_model.batch.retries, step)
             writer.add_scalar("system/gpu_memory_mib", peak_memory/2**20, step)
             writer.add_scalar("data/batch_clips", len(batch.clip_ids), step)
+            if clip_budget.enabled:
+                writer.add_scalar("data/processed_clips", clip_budget.count, step)
+                writer.add_scalar("data/remaining_clips", clip_budget.remaining, step)
             if hasattr(flow_model, "batch"):
                 writer.add_scalar("system/flow_batch", flow_model.batch.current, step)
                 writer.add_scalar("system/flow_oom_retries", flow_model.batch.retries, step)
@@ -1438,7 +1461,7 @@ def main() -> int:
 
         (args.out_dir / "loss_history.json").write_text(json.dumps(history, indent=2))
 
-    # `step`, not n_steps: with early stopping the loop can exit below the ceiling, and labelling
+    # `step`, not n_steps: with early stopping or a clip budget the loop can exit below the ceiling, and labelling
     # those weights ckpt_<n_steps> made a stopped-at-8000 model look like a completed 20000-step run
     # -- which then got evaluated in place of the best checkpoint.
     final = save_checkpoint(step)

@@ -6,12 +6,26 @@ import torch
 from torch import nn
 
 from mamba3_tracker.train.runtime import (
+    ClipBudget,
     CheckpointManager,
     build_optimizer,
     evaluation_weights,
     restore_checkpoint,
     manifest_train_paths,
 )
+
+
+def test_clip_budget_persists_actual_examples_and_disables_at_zero():
+    disabled = ClipBudget()
+    assert not disabled.enabled and not disabled.exhausted and disabled.remaining is None
+    budget = ClipBudget(20_000, 4_989)
+    budget.consume(32)
+    assert budget.remaining == 14_979
+    restored = ClipBudget(**budget.state_dict())
+    restored.consume(14_979)
+    assert restored.exhausted and restored.remaining == 0
+    with pytest.raises(ValueError, match="at least one"):
+        restored.consume(0)
 
 
 class TinyModel(nn.Module):

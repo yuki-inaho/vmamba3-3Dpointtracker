@@ -122,6 +122,9 @@ For a ~60 GB subset workflow, incremental downloads and training, batched depth 
 reusable DINO/flow caches, and artificial-data smoke training, see
 [the partitioned data workflow](doc/partitioned_data.md).
 
+That workflow also documents the fixed partial-minival monitoring metric.  It uses the
+official evaluator but never labels a 9-clip reference score as the paper's 150-clip result.
+
 ### 4.2 Train the refiner (v64)
 
 ```bash
