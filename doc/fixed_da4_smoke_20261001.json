@@ -23,9 +23,16 @@
   "flow_training_misses": 0,
   "scope": "Synthetic GPU smoke; analytic frozen flow, real frozen DINO and official Mamba-3 refiner. Not a real-data performance score.",
   "quality": {
-    "unit_tests": 52,
+    "unit_tests": 53,
     "ruff": "pass",
     "ty": "pass",
     "uv_lock": "pass"
-  }
+  },
+  "real_worker_pixel_probe": {
+    "real_clip": "Apartment_release_clean_seq145_4.npz",
+    "patterns": 4,
+    "images_bitwise_equal": true,
+    "max_diff": 0.0
+  },
+  "resize_context": "Warmup matches training DataLoader workers, preventing CPU interpolation ULP cache misses."
 }

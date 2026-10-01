@@ -8,8 +8,9 @@ import torch
 from jaxtyping import TypeCheckError
 
 from mamba3_tracker.data.dataset import TAPVid3DDataset
+from mamba3_tracker.data.dataset import collate_tracking
 from mamba3_tracker.data.fixed_da import (
-    DAIndex, FixedDABatchSampler, PhotometricPattern, apply_pattern, parse_patterns,
+    DAIndex, FixedDABatchSampler, PhotometricPattern, apply_pattern, parse_patterns, prewarm_loader,
 )
 from mamba3_tracker.data.frozen_cache import CachedFlow, FrozenTensorCache
 from mamba3_tracker.train.config import load_config
@@ -125,3 +126,39 @@ def test_da4_recipe_is_a_new_warm_start_with_bounded_cache():
     assert not cfg['model']['pretrained_mamba3']
     assert cfg['frozen_cache']['total_data_budget_gb'] == 120
     assert cfg['frozen_cache']['block_prewarm'] and not cfg['frozen_cache']['prewarm']
+
+
+def test_prewarm_matches_worker_resize_pixels_and_keys(monkeypatch):
+    import mamba3_tracker.data.dataset as module
+    from torch.utils.data import DataLoader
+    from mamba3_tracker.data.bucket_batch import seed_tracking_worker
+
+    native = torch.rand(2, 3, 64, 64, generator=torch.Generator().manual_seed(7))
+
+    def clip(path, frames):
+        return SimpleNamespace(images=native.clone(), tracks_XYZ=torch.ones(2, 2, 3),
+                               visibility=torch.ones(2, 2, dtype=torch.bool), H=64, W=64,
+                               N_q=2, queries_xyt=torch.tensor([[4., 4., 0.]]).repeat(2, 1),
+                               K=torch.eye(3), clip_id='clip', subset='adt')
+
+    monkeypatch.setattr(module, 'peek_clip_F', lambda _: 2)
+    monkeypatch.setattr(module, 'load_clip', clip)
+    ds = TAPVid3DDataset([Path('adt/clip.npz')], window_size=2, augment=True,
+                        fixed_window_seed=42, fixed_patterns=PATTERNS, image_size=256)
+    indices = [DAIndex(0, p, (0,)) for p in range(4)]
+    old_threads = torch.get_num_threads()
+    torch.set_num_threads(8)
+    try:
+        training = DataLoader(ds, batch_size=4, sampler=indices, num_workers=1,
+                              collate_fn=collate_tracking, worker_init_fn=seed_tracking_worker)
+        warm = prewarm_loader(ds, indices, 4, training_workers=1)
+        a, b = next(iter(training)).images, next(iter(warm)).images
+        assert torch.equal(a, b)
+        assert FrozenTensorCache.key(None, a) == FrozenTensorCache.key(None, b)
+        # The main-process context must also match when training has no workers.
+        direct = torch.stack([ds[i]['images'] for i in indices])
+        no_workers = next(iter(prewarm_loader(ds, indices, 4, training_workers=0))).images
+        assert torch.equal(direct, no_workers)
+        assert warm.num_workers == 1 and warm.prefetch_factor == 1
+    finally:
+        torch.set_num_threads(old_threads)

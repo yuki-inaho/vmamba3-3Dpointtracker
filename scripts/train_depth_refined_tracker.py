@@ -47,7 +47,7 @@ from mamba3_tracker.data.dataset import (
     official_train_test_split,
 )
 from mamba3_tracker.data.tapvid3d import load_clip
-from mamba3_tracker.data.fixed_da import DAIndex, FixedDABatchSampler, parse_patterns
+from mamba3_tracker.data.fixed_da import DAIndex, FixedDABatchSampler, parse_patterns, prewarm_loader
 from mamba3_tracker.model.depth_refined_tracker import (
     Mamba3DepthScaleRefiner,
     Mamba3V73,
@@ -1393,8 +1393,8 @@ def main() -> int:
                 warm_batch = int(data_cfg["fixed_da"].get("prewarm_batch", 16))
                 warm_indices = [DAIndex(i, p, index.block) for p in range(len(train_ds.fixed_patterns))
                                 for i in index.block]
-                warm_loader = DataLoader(train_ds, batch_size=warm_batch, sampler=warm_indices,
-                                         num_workers=0, collate_fn=collate_tracking)
+                warm_loader = prewarm_loader(train_ds, warm_indices, warm_batch,
+                                             int(loader_options["num_workers"]))
                 with torch.no_grad():
                     for warm_i, warm in enumerate(warm_loader, 1):
                         warm_images = warm.images.to(device)

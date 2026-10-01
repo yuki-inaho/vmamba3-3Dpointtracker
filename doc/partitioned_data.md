@@ -365,7 +365,10 @@ tracking用のCPU flowを直接読み出し、不要なGPU往復を減らしま�
 
 `configs/v64_official_mamba3_da4_cached.yaml` はDAなしのheld-out best200から始める別runです。
 明るさ0.8/1.2（contrast1.0）、contrast0.8/1.2（brightness1.0）の4種類だけを使用します。
-係数は時間窓の全フレームで共通、同じclip/window/patternの画像はworkerや再開に依存せず一致します。
+係数は時間窓の全フレームで共通です。事前生成も学習も同じDataLoader worker設定を使い、
+同じclip/window/patternの画像とcache keyを一致させます。CPUリサイズの1thread/多thread経路は
+最大約1.8e-7の丸め差があり、main processで生成してworkerで学習すると全frameのhashが
+変わる場合があるためです。これは実画像で検出し、workerを使う前処理に統一しました。
 原画像・既存DA3深度・3D教師を保持し、変換した画像のDINO特徴と双方向WAFT flowを保存します。
 変換画像自体を4コピー保存する必要はありません。DINO backbone/flowだけを凍結・キャッシュし、
 projection・official Mamba-3 refinerは学習します。
