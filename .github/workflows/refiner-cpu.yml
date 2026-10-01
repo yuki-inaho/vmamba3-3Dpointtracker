@@ -1,0 +1,50 @@
+name: Best200 refiner CPU verification
+on:
+  workflow_dispatch:
+  push:
+    branches: [main]
+    paths:
+      - 'src/mamba3_tracker/deployment/**'
+      - 'src/mamba3_tracker/model/onnx_refiner.py'
+      - 'scripts/*refiner*'
+      - 'scripts/check_training_quality.sh'
+      - 'cpp/refiner/**'
+      - 'deploy/onnx_cpu/**'
+      - 'tests/unit/test_onnx_refiner*'
+      - 'pyproject.toml'
+      - 'uv.lock'
+      - '.github/workflows/refiner-cpu.yml'
+permissions:
+  contents: read
+jobs:
+  cpu:
+    runs-on: ubuntu-24.04
+    timeout-minutes: 25
+    steps:
+      - uses: actions/checkout@v4
+        with:
+          persist-credentials: false
+      - uses: astral-sh/setup-uv@v6
+      - name: Prepare the pinned source and dependencies
+        run: |
+          git submodule update --init --recursive third_party/visionMamba3
+          uv sync --locked --extra onnx --python 3.12
+          mkdir -p weights result/sdk
+          curl -fL --retry 3 https://github.com/yuki-inaho/vmamba3-3Dpointtracker/releases/download/mamba3-preview-20261001-step200/tracker_mamba3_daoff_best200.pt -o weights/tracker_mamba3_daoff_best200.pt
+          echo 'bcddf045311b76a91bc772e35901acbdb99f397b752ee0ba4beacb3fb1ded5f4  weights/tracker_mamba3_daoff_best200.pt' | sha256sum -c -
+          curl -fL --retry 3 https://github.com/microsoft/onnxruntime/releases/download/v1.30.0/onnxruntime-linux-x64-1.30.0.tgz -o result/sdk/ort.tgz
+          echo 'a5ed5a3cac51fbb2e90da632ae43d19212faaa20e76484e62bcb7c23ddb3b3fd  result/sdk/ort.tgz' | sha256sum -c -
+          tar -xzf result/sdk/ort.tgz -C result/sdk
+      - name: Run CPU gates and independent C++ and Python inference
+        run: |
+          python3 scripts/validate_refiner_cpu.py --ckpt weights/tracker_mamba3_daoff_best200.pt --sdk-root result/sdk/onnxruntime-linux-x64-1.30.0
+      - uses: actions/upload-artifact@v4
+        if: always()
+        with:
+          name: best200-onnx-cpp-cpu-verification
+          path: |
+            result/onnx_best200_cpu/
+            result/cpp_runtime/
+            docs/evidence/onnx_best200_cpu/
+          retention-days: 14
+          if-no-files-found: error
