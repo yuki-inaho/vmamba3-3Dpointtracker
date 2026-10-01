@@ -8,6 +8,9 @@ from __future__ import annotations
 
 import argparse
 import json
+import math
+import os
+import signal
 import subprocess
 import sys
 from pathlib import Path
@@ -19,6 +22,9 @@ ROOT = Path(__file__).resolve().parents[1]
 
 
 def _best_checkpoint(out_dir: Path) -> Path:
+    status = json.loads((out_dir / "training_status.json").read_text())
+    if status.get("reason") not in {"early_stopping", "clip_budget", "max_steps"}:
+        raise RuntimeError(f"phase is not normally finished: {out_dir}: {status.get('reason')}")
     manifest = out_dir / "checkpoints.json"
     if not manifest.is_file():
         raise RuntimeError(f"phase one did not write {manifest}")
@@ -33,16 +39,57 @@ def _best_checkpoint(out_dir: Path) -> Path:
 
 def _run(cmd: list[str]) -> None:
     print("[staged] $ " + " ".join(cmd), flush=True)
-    subprocess.run(cmd, cwd=ROOT, check=True)
+    child = subprocess.Popen(cmd, cwd=ROOT, start_new_session=True)
+    try:
+        result = child.wait()
+        if result:
+            raise subprocess.CalledProcessError(result, cmd)
+    except BaseException:
+        # Include DataLoader workers when interrupted; do not leave a GPU job
+        # running behind a stopped runner or accidentally launch phase two.
+        try:
+            os.killpg(child.pid, signal.SIGTERM)
+        except ProcessLookupError:
+            pass
+        child.wait()
+        raise
+
+
+def _reference(best: Path, manifest: Path, data_root: Path) -> None:
+    ref_dir = best.parent / "reference_eval" / best.stem
+    _run([sys.executable, "scripts/eval_metric3d.py", "--method", "v35",
+          "--ckpt", str(best), "--depth", "da3l", "--split", "minival",
+          "--clip-manifest", str(manifest), "--out-dir", str(ref_dir),
+          "--data-root", str(data_root)])
+    _verify_reference(ref_dir, manifest)
+    _run([sys.executable, "scripts/summarize_reference_metric.py", "--metrics",
+          str(ref_dir / "metrics.json"), "--manifest", str(manifest),
+          "--out", str(ref_dir / "reference_progress.json")])
+
+
+def _verify_reference(ref_dir: Path, manifest_path: Path) -> None:
+    manifest = json.loads(manifest_path.read_text())
+    metrics = json.loads((ref_dir / "metrics.json").read_text())
+    if metrics.get("failures") != 0:
+        raise RuntimeError("reference evaluation has failed clips; next phase is blocked")
+    for subset, names in manifest["files_by_subset"].items():
+        rows = json.loads((ref_dir / "metric_results" / f"{subset}.json").read_text())
+        expected = {Path(name).stem for name in names}
+        if len(rows) != len(names) or {r["clip_id"] for r in rows} != expected:
+            raise RuntimeError(f"reference clip membership differs for {subset}")
+    for metric in ("average_jaccard", "metric_average_jaccard"):
+        value = float(metrics["overall"][metric])
+        if not math.isfinite(value):
+            raise RuntimeError(f"reference evaluation produced non-finite {metric}")
 
 
 def main() -> None:
     ap = argparse.ArgumentParser(description=__doc__)
     ap.add_argument("--data-root", type=Path, default=Path("~/data"))
     ap.add_argument("--cache-config", type=Path,
-                    default=Path("configs/v64_amuse_cache_phase.yaml"))
+                    default=Path("configs/v64_official_mamba3_cache_phase.yaml"))
     ap.add_argument("--finetune-config", type=Path,
-                    default=Path("configs/v64_amuse_da_finetune.yaml"))
+                    default=Path("configs/v64_official_mamba3_da_finetune.yaml"))
     ap.add_argument("--reference-manifest", type=Path,
                     default=Path("configs/v64_metric_reference_minival.json"))
     ap.add_argument("--dry-run", action="store_true")
@@ -62,6 +109,13 @@ def main() -> None:
     if not fine_cfg["train"].get("init_best_from"):
         raise ValueError("fine-tune phase requires train.init_best_from")
     phase_one = Path(cache_cfg["train"]["out_dir"]).expanduser()
+    if Path(fine_cfg["train"]["init_best_from"]).expanduser().resolve() != phase_one.resolve():
+        raise ValueError("fine-tune init_best_from must refer to this cache phase")
+    if fine_cfg["train"]["out_dir"] == str(phase_one):
+        raise ValueError("the two stages need different output directories")
+    for name in ("dim", "num_layers", "temporal_mixer", "two_pool"):
+        if cache_cfg["model"].get(name) != fine_cfg["model"].get(name):
+            raise ValueError(f"stage architectures differ: model.{name}")
     direct = Path(cache_cfg["train"]["init_ckpt"]).expanduser()
     if not direct.is_file():
         raise FileNotFoundError(f"cache phase warm-start is missing: {direct}")
@@ -80,18 +134,17 @@ def main() -> None:
     if args.dry_run:
         return
 
+    def terminate(signum, frame):
+        raise KeyboardInterrupt("staged training terminated")
+
+    signal.signal(signal.SIGTERM, terminate)
     train = [sys.executable, "scripts/train_depth_refined_tracker.py"]
     _run(train + ["--config", str(args.cache_config), "--data-root", str(args.data_root)])
     best = _best_checkpoint(phase_one)
-    ref_dir = phase_one / "reference_eval" / f"best_{best.stem.removeprefix('best_')}"
-    _run([sys.executable, "scripts/eval_metric3d.py", "--method", "v35",
-          "--ckpt", str(best), "--depth", "da3l", "--split", "minival",
-          "--clip-manifest", str(args.reference_manifest), "--out-dir", str(ref_dir),
-          "--data-root", str(args.data_root)])
-    _run([sys.executable, "scripts/summarize_reference_metric.py", "--metrics",
-          str(ref_dir / "metrics.json"), "--manifest", str(args.reference_manifest),
-          "--out", str(ref_dir / "reference_progress.json")])
+    _reference(best, args.reference_manifest, args.data_root)
     _run(train + ["--config", str(args.finetune_config), "--data-root", str(args.data_root)])
+    _reference(_best_checkpoint(Path(fine_cfg["train"]["out_dir"])),
+               args.reference_manifest, args.data_root)
 
 
 if __name__ == "__main__":

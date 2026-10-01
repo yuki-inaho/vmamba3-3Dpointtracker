@@ -648,6 +648,9 @@ def main() -> int:
             vmamba3_patch=int(mc.get("vmamba3_patch", 14)),
             vmamba3_grid=int(mc.get("vmamba3_grid", 32)),
             two_pool=bool(mc.get("two_pool", False)),
+            temporal_mixer=str(mc.get("temporal_mixer", "vssd_cross")),
+            official_mamba3_bidirectional=bool(mc.get("official_mamba3_bidirectional", True)),
+            official_mamba3_track_chunk=int(mc.get("official_mamba3_track_chunk", 128)),
         ).to(device)
         _load_ckpt_into(model, state["model"])
         model.eval()

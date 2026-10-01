@@ -79,6 +79,19 @@ def _normalise_loss_weights(raw: dict[str, float]) -> dict[str, float]:
     return {k: float(v) / total for k, v in raw.items()}
 
 
+def _read_yaml(path: Path, seen: tuple[Path, ...] = ()) -> dict[str, Any]:
+    if path in seen:
+        raise ValueError(f"cyclic config extends: {path}")
+    raw = yaml.safe_load(path.read_text())
+    if not isinstance(raw, dict):
+        raise ValueError(f"{path}: top-level must be a mapping")
+    parent = raw.pop("extends", None)
+    if parent is not None:
+        base_path = (path.parent / str(parent)).expanduser().resolve()
+        raw = _deep_merge(_read_yaml(base_path, seen + (path,)), raw)
+    return raw
+
+
 def load_config(
     path: str | Path,
     overrides: dict[str, Any] | None = None,
@@ -98,9 +111,7 @@ def load_config(
     plus the original `model`, `data`, `train`, `loss` sections.
     """
     path = Path(path).expanduser().resolve()
-    raw = yaml.safe_load(path.read_text())
-    if not isinstance(raw, dict):
-        raise ValueError(f"{path}: top-level must be a mapping")
+    raw = _read_yaml(path)
 
     cfg = _deep_merge(raw, overrides or {})
 

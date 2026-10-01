@@ -105,6 +105,24 @@ class CachedFlow:
         self.prefetch_enabled = batch_size > 1
         self.warm_values = {}
         self.last_peak_allocated = 0
+        self._prefetched_clips = set()
+
+    @torch.no_grad()
+    def prefetch_windows(self, windows):
+        """Batch cache misses across clips without forming cross-clip pairs."""
+        self._prefetched_clips.clear()
+        frames = windows.shape[1]
+        pairs = []
+        for clip in range(len(windows)):
+            self._prefetched_clips.add((windows[clip].data_ptr(), tuple(windows[clip].shape)))
+            offset = clip * frames
+            pairs.extend((offset + i, offset + i + 1) for i in range(frames - 1))
+            pairs.extend((offset + i + 1, offset + i) for i in range(frames - 1))
+        self._prefetch_pairs(windows.flatten(0, 1), pairs)
+
+    def release_prefetch(self):
+        self.warm_values.clear()
+        self._prefetched_clips.clear()
 
     @torch.no_grad()
     def prefetch_clip(self, images):
@@ -115,10 +133,16 @@ class CachedFlow:
         """
         if not self.prefetch_enabled or len(images) < 2:
             return
-        self.warm_values.clear()
-        self.last_peak_allocated = 0
+        if (images.data_ptr(), tuple(images.shape)) in self._prefetched_clips:
+            return
+        self._prefetched_clips.clear()
         pairs = [(i, i + 1) for i in range(len(images) - 1)]
         pairs += [(j, i) for i, j in pairs]
+        self._prefetch_pairs(images, pairs)
+
+    def _prefetch_pairs(self, images, pairs):
+        self.warm_values.clear()
+        self.last_peak_allocated = 0
         pending = []
         for first, second in pairs:
             key = self.cache.key(images[first:first + 1], images[second:second + 1])

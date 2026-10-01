@@ -3,6 +3,7 @@
 from __future__ import annotations
 
 import random
+import hashlib
 import warnings
 from dataclasses import dataclass, field
 from pathlib import Path
@@ -55,6 +56,7 @@ class TAPVid3DDataset(Dataset):
         image_size: int = 448,
         da3_depth_root: str | Path | None = None,
         reanchor_window: bool = True,
+        fixed_window_seed: int | None = None,
     ) -> None:
         self.clip_paths = list(clip_paths)
         self.window_size = window_size
@@ -66,6 +68,9 @@ class TAPVid3DDataset(Dataset):
         )
         self.reanchor_window = bool(reanchor_window)
         self._rng = random.Random(seed)
+        self.fixed_window_seed = fixed_window_seed
+        if fixed_window_seed is not None and augment:
+            raise ValueError("fixed cache windows require photometric augmentation off")
 
     def __len__(self) -> int:
         return len(self.clip_paths)
@@ -79,7 +84,11 @@ class TAPVid3DDataset(Dataset):
         path = self.clip_paths[idx]
         F_total = peek_clip_F(path)
         if self.window_size is not None and self.window_size < F_total:
-            start = self._rng.randint(0, F_total - self.window_size)
+            window_rng = self._rng
+            if self.fixed_window_seed is not None:
+                key = f"{self.fixed_window_seed}:{path.parent.name}/{path.name}"
+                window_rng = random.Random(hashlib.sha256(key.encode()).hexdigest())
+            start = window_rng.randint(0, F_total - self.window_size)
             end = start + self.window_size
         else:
             start, end = 0, F_total

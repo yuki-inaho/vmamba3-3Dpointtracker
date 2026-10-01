@@ -22,6 +22,7 @@ class GrowingClipPool:
         subsets,
         val_per_subset=5,
         seed=42,
+        state_from=None,
     ):
         self.root = Path(raw_root).expanduser()
         self.depth = Path(depth_root).expanduser()
@@ -41,8 +42,11 @@ class GrowingClipPool:
                 raise ValueError("minival leakage in selection")
         self.val = None
         self.last_train = []
-        if self.state_path.exists():
-            state = json.loads(self.state_path.read_text())
+        inherited = Path(state_from).expanduser() if state_from is not None else None
+        if inherited is not None and not inherited.is_file():
+            raise FileNotFoundError(f"validation source is missing: {inherited}")
+        if self.state_path.exists() or inherited is not None:
+            state = json.loads((self.state_path if self.state_path.exists() else inherited).read_text())
             if (
                 state["selection_hash"] != self.selection_hash
                 or state["val_per_subset"] != val_per_subset
@@ -53,6 +57,10 @@ class GrowingClipPool:
                 )
             self.val = [Path(p) for p in state["validation"]]
             self.last_train = [Path(p) for p in state["train"]]
+            if inherited is not None:
+                source_val = json.loads(inherited.read_text())["validation"]
+                if [str(p) for p in self.val] != source_val:
+                    raise ValueError("existing validation differs from inherited validation")
 
     def ready_paths(self):
         ready = {}

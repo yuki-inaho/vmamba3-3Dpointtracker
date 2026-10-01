@@ -311,6 +311,8 @@ def _run_flow_batch(flow_model, batch, device, image_size, fb_alpha, fb_beta,
             )
             all_uv.append(uv)
             all_vis.append(vis)
+        if hasattr(flow_model, "release_prefetch"):
+            flow_model.release_prefetch()
     uv = torch.stack(all_uv).to(device)  # (B,F,N,2)
     vis = torch.stack(all_vis).to(device)  # (B,F,N)
     # Applied before ray and depth are derived, so the perturbation reaches the depth patch and the
@@ -683,6 +685,7 @@ def main() -> int:
                 args.out_dir / "growing_pool.json", data_cfg["subsets"],
                 val_per_subset=int(split_cfg.get("val_per_subset", 5)),
                 seed=int(split_cfg.get("seed", 42)),
+                state_from=split_cfg.get("validation_state_from"),
             )
             while True:
                 try:
@@ -784,6 +787,7 @@ def main() -> int:
         image_size=image_size,
         da3_depth_root=da3_depth_root,
         reanchor_window=reanchor_window,
+        fixed_window_seed=data_cfg.get("fixed_window_seed"),
     )
     val_ds = TAPVid3DDataset(
         val_clips,
@@ -877,6 +881,9 @@ def main() -> int:
             vmamba3_patch=int(model_cfg.get("vmamba3_patch", 14)),
             vmamba3_grid=int(model_cfg.get("vmamba3_grid", 32)),
             two_pool=bool(model_cfg.get("two_pool", False)),
+            temporal_mixer=str(model_cfg.get("temporal_mixer", "vssd_cross")),
+            official_mamba3_bidirectional=bool(model_cfg.get("official_mamba3_bidirectional", True)),
+            official_mamba3_track_chunk=int(model_cfg.get("official_mamba3_track_chunk", 128)),
             gate_by_vis=bool(model_cfg.get("gate_by_vis", True)),
         ).to(device)
         loss_fn = TrackingLossV35(
@@ -1157,6 +1164,17 @@ def main() -> int:
             f"(missing={len(missing)} unexpected={len(unexpected)})",
             flush=True,
         )
+    pretrained_mamba = model_cfg.get("pretrained_mamba3")
+    if pretrained_mamba and _find_latest_ckpt(args.out_dir) is None:
+        from mamba3_tracker.model.official_mamba3 import load_pretrained_mixers
+        report = load_pretrained_mixers(model.layers, pretrained_mamba["checkpoint"],
+                                       pretrained_mamba.get("source_layers", [0, 1]),
+                                       pretrained_mamba.get("sha256"))
+        (args.out_dir / "pretrained_mamba3_report.json").write_text(json.dumps(report, indent=2))
+        cfg_snapshot["_pretrained_mamba3"] = report
+        dump_resolved(cfg_snapshot, args.out_dir / "cfg.json")
+        print(f"[train] official Mamba-3: {report['loaded_tensors']} exact tensors, "
+              f"{report['loaded_parameters']:,} parameters; mixer coverage=100%", flush=True)
     # freeze_scale applies HOWEVER stage 1's weights arrived. It used to live inside the
     # model.scale_init branch, so an arm that warm-started the whole composite through
     # train.init_ckpt got no freeze at all and the flag was a silent no-op -- the same failure as
@@ -1258,6 +1276,24 @@ def main() -> int:
     model.train()
     t0 = time.perf_counter()
     step = start_step
+    if frozen_cache_cfg.get("prewarm", False):
+        if train_ds.fixed_window_seed is None:
+            raise ValueError("frozen_cache.prewarm requires data.fixed_window_seed")
+        print(f"[train] PREWARM {len(train_ds)} fixed windows before refiner updates", flush=True)
+        warm_start = time.perf_counter()
+        with torch.no_grad():
+            for warm_i, warm_batch in enumerate(loader, 1):
+                warm_images = warm_batch.images.to(device, non_blocking=True)
+                flow_model.prefetch_windows(warm_images * 255.0)
+                flow_model.release_prefetch()
+                with torch.autocast(device.type, dtype=amp_dtype, enabled=use_amp):
+                    model.dino.forward_video(warm_images)
+                del warm_images
+                print(f"[train] PREWARM batch {warm_i}/{len(loader)} "
+                      f"flow_batch={flow_model.batch.current} "
+                      f"elapsed={time.perf_counter() - warm_start:.0f}s", flush=True)
+        print("[train] PREWARM complete; enabling refiner updates", flush=True)
+        t0 = time.perf_counter()
     loader_iter = iter(loader)
     # Mean of every step in the log window, not the single step the log happens to land on. With
     # batch=1 the per-clip loss spans about 20x, so a lone sample carries no trend: v91's 24 logged

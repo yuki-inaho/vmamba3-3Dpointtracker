@@ -8,6 +8,7 @@ build/
 .pytest_cache/
 result/
 temp/
+weights/
 
 # LaTeX build artifacts
 *.aux

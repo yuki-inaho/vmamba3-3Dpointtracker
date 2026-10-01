@@ -175,6 +175,9 @@ class Mamba3V35Refiner(nn.Module):
         vmamba3_patch: int = 14,
         vmamba3_grid: int = 32,
         two_pool: bool = False,
+        temporal_mixer: str = "vssd_cross",
+        official_mamba3_bidirectional: bool = True,
+        official_mamba3_track_chunk: int = 128,
     ) -> None:
         super().__init__()
         self.dim = dim
@@ -215,19 +218,24 @@ class Mamba3V35Refiner(nn.Module):
         # Input: [ray_x, ray_y, z/z_ref, vis] + depth_patch(k²) + dino_feat(d_proj)
         input_dim = 4 + patch_size * patch_size + d_proj
         self.embed = _mlp(input_dim, dim, dim)
-        self.layers = nn.ModuleList(
-            [
-                Mamba3CrossAttention(
-                    dim_q=dim,
-                    dim_kv=dim,
-                    num_heads=num_heads,
-                    state_dim=state_dim,
-                    bidirectional_mask=False,
-                    two_pool=two_pool,
-                )
+        if temporal_mixer == "official_mamba3":
+            if two_pool:
+                raise ValueError("official_mamba3 replaces VSSD; set model.two_pool: false")
+            from .official_mamba3 import OfficialMamba3Adapter
+            self.layers = nn.ModuleList([
+                OfficialMamba3Adapter(dim, official_mamba3_bidirectional,
+                                      official_mamba3_track_chunk)
                 for _ in range(num_layers)
-            ]
-        )
+            ])
+        elif temporal_mixer == "vssd_cross":
+            self.layers = nn.ModuleList([
+                Mamba3CrossAttention(dim_q=dim, dim_kv=dim, num_heads=num_heads,
+                                     state_dim=state_dim, bidirectional_mask=False,
+                                     two_pool=two_pool)
+                for _ in range(num_layers)
+            ])
+        else:
+            raise ValueError(f"unknown temporal_mixer: {temporal_mixer}")
         self.pre_norms = nn.ModuleList([nn.LayerNorm(dim) for _ in range(num_layers)])
         self.post_norms = nn.ModuleList([nn.LayerNorm(dim) for _ in range(num_layers)])
         self.out_norm = nn.LayerNorm(dim)

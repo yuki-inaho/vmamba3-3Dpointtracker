@@ -1,0 +1,29 @@
+# The VSSD operator is replaced by two intact pretrained official SISO mixers.
+# Retain the learned tracker input/output layers from step 3780. The adapters
+# are new; the frozen DINO/flow/DA3 data remain reusable.
+extends: v64_amuse_cache_phase.yaml
+model:
+  two_pool: false
+  temporal_mixer: official_mamba3
+  official_mamba3_bidirectional: true
+  official_mamba3_track_chunk: 128
+  pretrained_mamba3:
+    checkpoint: weights/mamba3-siso-187m/pytorch_model.bin
+    source_layers: [0, 1]
+    sha256: b462d55e9f8ab9746be641d4de550b51bf65e55ab662e66835588b5a458c95ec
+data:
+  fixed_window_seed: 42
+  split:
+    validation_state_from: result/v64_amuse/growing_pool.json
+train:
+  out_dir: result/v64_official_mamba3_cache_phase
+  # Lower Muon LR for the imported mixers; this is transfer learning from text
+  # to 3D trajectories, not a pretrained tracking model.
+  amuse:
+    muon_lr: 0.002
+    aux_lr: 0.0001
+frozen_cache:
+  prewarm: true
+  flow_batch: 32
+  flow_max_batch: 64
+  gpu_reserve_gb: 4

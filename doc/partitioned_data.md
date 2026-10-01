@@ -275,11 +275,15 @@ DA付き微調整へ誤って持ち込みません。
 
 ```sh
 . scripts/cudnn_env.sh
-bash -ic 'uv run python scripts/train_v64_staged.py --data-root ~/data' \
+bash -ic 'uv run python scripts/train_v64_staged.py --data-root ~/data \
+  --cache-config configs/v64_amuse_cache_phase.yaml \
+  --finetune-config configs/v64_amuse_da_finetune.yaml' \
   > temp/v64_staged_train.log 2>&1 &
 
 # GPUを使わず、開始元・DA設定・引継ぎ先だけを検証する。
-uv run python scripts/train_v64_staged.py --dry-run
+uv run python scripts/train_v64_staged.py --dry-run \
+  --cache-config configs/v64_amuse_cache_phase.yaml \
+  --finetune-config configs/v64_amuse_da_finetune.yaml
 ```
 
 - 第1段階: `configs/v64_amuse_cache_phase.yaml` → `result/v64_amuse_cache_phase/`。
@@ -295,6 +299,61 @@ uv run python scripts/train_v64_staged.py --dry-run
 第1段階のprocessが非zero終了、評価が失敗、best checkpointが欠落した場合はrunnerが例外で
 終わり、第2段階は起動しません。中断後は同じrunnerを実行すれば第1段階の`latest.pt`から
 再開します。第2段階の結果を再計測するときは、学習終了後に同じreference manifestを渡します。
+
+## 公式Mamba-3の事前学習済みmixerを使う実験
+
+`state-spaces/mamba` の公開最小Mamba-3は
+[mamba3-siso-187m](https://huggingface.co/state-spaces/mamba3-siso-187m)です。
+これはFineWeb-Eduで学習した言語モデルで、幅768/state128/head24です。
+元のtrackerは幅128/state64/head4の独自VSSD cross-attentionで、同じSSMの考え方を使っていても
+checkpointのtensor名と投影構造が異なります。`strict=False`はshape不一致を変換しません。
+[visionMamba3](https://github.com/MasahiroOgawa/visionMamba3)の公開README/tree/releasesには
+このtrackerへ転用できる事前学習checkpointの配布先がありませんでした（2026-10-01確認）。
+
+`OfficialMamba3Adapter` は128→768→128の新規projectionの間に、公式`Mamba3`をそのまま使います。
+最小checkpointの先頭2層のmixerと入力RMSNormを読み込み、言語embedding/MLP/headを除きます。
+2層合計18 tensors・7,645,280 parametersが完全一致し、mixerの読み込みcoverageは100%です。
+refiner全体の学習対象は620,502から8,117,988 parametersに変わります。
+実際の読み込み結果・tensor mapping・source revision・ファイルsha256はrun内の
+`pretrained_mamba3_report.json`へ保存します。無理なslice/reshapeは行いません。
+trackerの入力・出力層は旧latest step3780から引き継ぎ、以前のVSSD層を公式mixerへ交換します。
+forward/reverseの公式scanは重みを共有し、平均で両方向の時間情報を与えます。
+これはVSSD-2poolと異なる実験構成で、論文headlineの完全再現runとは区別します。
+
+```sh
+# 取得revisionを固定。モデル本体は357 MiB、weights/はgitignore対象。
+uv run python scripts/download_mamba3_weights.py
+. scripts/cudnn_env.sh
+
+# 人工データで実pretrained mixer・AMUSE更新・DINO cache一致を検証。
+uv run python scripts/smoke_train_synthetic.py --steps 3 \
+  --temporal-mixer official_mamba3 --frozen-cache \
+  --out-dir result/synthetic_official_mamba3_smoke
+
+# runnerの現在の標準設定は公式mixerの二段階学習。
+bash -ic 'uv run python scripts/train_v64_staged.py --data-root ~/data' \
+  > temp/v64_official_mamba3_staged.log 2>&1 &
+
+# 従来VSSDの二段階実験はconfigを明示する。
+uv run python scripts/train_v64_staged.py \
+  --cache-config configs/v64_amuse_cache_phase.yaml \
+  --finetune-config configs/v64_amuse_da_finetune.yaml --data-root ~/data
+```
+
+新runは`result/v64_official_mamba3_cache_phase/`と
+`result/v64_official_mamba3_da_finetune/`へ保存します。元runとcheckpointは保全します。
+両段階のheldoutは`result/v64_amuse/growing_pool.json`から完全に同じ15本を継承します。
+
+第1段階は`fixed_window_seed: 42`でclipごとの8-frame時間窓を固定し、query選択は毎回変えられます。
+最初に全ready trainのDINO/forward-backward flowをGPU batchでprewarmし、生成が終わってから
+refinerを更新します。初回生成と学習のflowはFP32、DINOは同じBF16条件を使ってkeyを一致させます。
+flowのmissは32 pairから最大64 pairで複数clipをまとめ、clip境界をまたぐpairは作りません。
+cache 20 GB +40 GB、raw/depth込み120 GB guardを維持します。
+この段階では固定時間窓以外のフレームを学習しないため、第2段階でランダム時間窓とDAを戻します。
+
+正常終了した第1段階bestを9/150の固定referenceで評価し、成功してからDA微調整へ引き継ぎます。
+微調整終了後も同じreferenceでbestを再評価します。ステージの失敗・中断・best欠落は次段階を
+起動しません。各runにK-best3+latest、早期停止、clip countとTensorBoardを保存します。
 
 ## GPUを活用した生成と学習の並行実行
 

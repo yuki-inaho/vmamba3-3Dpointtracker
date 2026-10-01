@@ -1,0 +1,15 @@
+extends: v64_amuse_da_finetune.yaml
+model:
+  two_pool: false
+  temporal_mixer: official_mamba3
+  official_mamba3_bidirectional: true
+  official_mamba3_track_chunk: 128
+data:
+  split:
+    validation_state_from: result/v64_amuse/growing_pool.json
+train:
+  out_dir: result/v64_official_mamba3_da_finetune
+  init_best_from: result/v64_official_mamba3_cache_phase
+  amuse:
+    muon_lr: 0.0005
+    aux_lr: 0.00005

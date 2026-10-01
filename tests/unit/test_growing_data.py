@@ -74,3 +74,18 @@ def test_immutable_selection_on_resume(tmp_path):
     manifest.write_text(json.dumps(data))
     with pytest.raises(ValueError, match="selection"):
         GrowingClipPool(manifest, root, depth, state, ["pstudio"], val_per_subset=1)
+
+
+def test_new_phase_inherits_original_holdout_and_admissions(tmp_path):
+    manifest, root, depth, state = setup_pool(tmp_path)
+    for name in FULL_EVAL_FILES["pstudio"][:2]:
+        ready(root, depth, "pstudio", name)
+    original = GrowingClipPool(manifest, root, depth, state, ["pstudio"], val_per_subset=1)
+    _, old_val = original.snapshot()
+    for name in FULL_EVAL_FILES["pstudio"][2:4]:
+        ready(root, depth, "pstudio", name)
+    phase = GrowingClipPool(manifest, root, depth, tmp_path / "phase.json", ["pstudio"],
+                            val_per_subset=1, state_from=state)
+    new_train, new_val = phase.snapshot()
+    assert new_val == old_val and len(new_train) == 3
+    assert not set(new_train) & set(old_val)

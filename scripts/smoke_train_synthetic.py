@@ -35,6 +35,10 @@ def main():
     parser.add_argument("--frozen-cache", action="store_true",
                         help="Reuse frozen DINO features on disk; check cached/uncached equality")
     parser.add_argument("--seed", type=int, default=0)
+    parser.add_argument("--temporal-mixer", choices=["vssd_cross", "official_mamba3"],
+                        default="vssd_cross")
+    parser.add_argument("--mamba3-checkpoint", type=Path,
+                        default=Path("weights/mamba3-siso-187m/pytorch_model.bin"))
     parser.add_argument(
         "--dino-revision", default="114c1379950215c8b35dfcd4e90a5c251dde0d32"
     )
@@ -42,6 +46,7 @@ def main():
     if args.steps < 1:
         parser.error("--steps must be positive")
     torch.manual_seed(args.seed)
+    torch.set_num_threads(8)
     # Resolve local snapshot so a gated HTTP request/token is unnecessary on smoke runs.
     dino = snapshot_download(
         "facebook/dinov3-vits16-pretrain-lvd1689m",
@@ -49,8 +54,14 @@ def main():
         local_files_only=True,
     )
     refiner = Mamba3V35Refiner(
-        two_pool=True, dino_model=dino, dino_image_size=64, image_size=64
+        two_pool=args.temporal_mixer == "vssd_cross", temporal_mixer=args.temporal_mixer,
+        dino_model=dino, dino_image_size=64, image_size=64
     ).to(args.device)
+    pretrained_report = None
+    if args.temporal_mixer == "official_mamba3":
+        from mamba3_tracker.model.official_mamba3 import load_pretrained_mixers
+        pretrained_report = load_pretrained_mixers(refiner.layers, args.mamba3_checkpoint)
+        print(f"[smoke] loaded {pretrained_report['loaded_parameters']:,} official parameters", flush=True)
     head = FlowVisHead().to(args.device)
     train_batch = synthetic_batch(args.seed, device=args.device)
     val_batch = synthetic_batch(args.seed + 1, device=args.device)
@@ -165,7 +176,7 @@ def main():
              "cache": None if feature_cache is None else {
                  "equal": cache_equal, "hits": feature_cache.hits,
                  "misses": feature_cache.misses,
-             }}, indent=2
+             }, "pretrained_mamba3": pretrained_report}, indent=2
         )
     )
 

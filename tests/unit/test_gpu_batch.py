@@ -69,3 +69,32 @@ def test_pair_prefetch_batches_and_reuses_after_oom(tmp_path):
     wrapper.prefetch_clip(images)
     assert len(model.calls) == before
     assert wrapper.batch.retries == 1
+
+
+def test_cached_batch_never_pairs_different_clips_and_reuses_bank(tmp_path):
+    class Model:
+        device = "cpu"
+
+        def __init__(self):
+            self.calls = 0
+
+        def flow(self, first, second):
+            self.calls += 1
+            assert ((second - first).abs() < 10).all()
+            return (second - first)[:, :2]
+
+    model = Model()
+    wrapper = CachedFlow(model, FrozenTensorCache(tmp_path, "flow", 1_000_000), batch_size=4)
+    windows = torch.tensor([[0., 1., 2.], [100., 103., 106.]]).view(2, 3, 1, 1, 1)
+    windows = windows.expand(2, 3, 3, 4, 4).clone()
+    wrapper.prefetch_windows(windows)
+    calls = model.calls
+    for images in windows:
+        wrapper.prefetch_clip(images)  # Must preserve the bank, not recompute it.
+        for i in range(2):
+            value = wrapper.flow(images[i:i+1], images[i+1:i+2])
+            torch.testing.assert_close(value, (images[i+1:i+2]-images[i:i+1])[:, :2])
+    assert model.calls == calls
+    wrapper.release_prefetch()
+    wrapper.prefetch_windows(windows)
+    assert model.calls == calls
