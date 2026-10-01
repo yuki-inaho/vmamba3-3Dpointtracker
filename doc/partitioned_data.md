@@ -399,6 +399,22 @@ flow cache/trackingの中央値は1.913秒から0.440秒になりました。ref
 optimizer/RNGとDINOv3 backboneは含みません。DINOは承認済みアカウントで別途取得してください。
 これはDAなし学習途中のartifactで、正式な全データ性能の報告ではありません。
 
+2026-10-01のDAなし段階は300更新・7,645処理clipでEarly stoppingにより完了しました。
+bestは200更新（固定heldout15本のloss 0.1028277606）で、公開済み重みと同じものです。
+DA付き段階は開始していません。固定9/150 clipでの評価は失敗0件でした。
+
+| 同じ固定9clipの指標 | 旧VSSD tracker | 公式Mamba-3 best200 |
+|---|---:|---:|
+| 3D-AJ | 11.02% | 11.77% |
+| 絶対metric-AJ | 22.88% | 24.73% |
+| DriveTrackの絶対metric-AJ | 10.68% | 10.13% |
+
+全体は改善しましたが、DriveTrackでは低下しました。論文の全150clipでの絶対metric-AJ
+25.6%は評価集合が異なるため、直接比較や到達率の主張には使えません。
+学習の実測更新時間は17.72秒から約13.39秒へ減りました。後者は10更新ごとの検証と
+loader待ちを含み、prewarm・最初の再開更新・最後の検証を除く区間です。
+詳細な条件とsubset別の結果は`doc/training_result_20261001.json`に記録しています。
+
 ## GPUを活用した生成と学習の並行実行
 
 深度の `--auto-batch` は16 frameからバッチを拡大し、最大128 frame・空きVRAM・8 GBの

@@ -1,0 +1,156 @@
+{
+  "completed_at": "2026-10-01T19:34:53.338698+09:00",
+  "run": "v64_official_mamba3_cache_phase",
+  "code_commit": "f14efbd",
+  "training_status": {
+    "step": 300,
+    "max_steps": 800,
+    "early_stop": {
+      "patience": 5,
+      "min_delta": 0.001,
+      "mode": "min",
+      "best": 0.10282776057720185,
+      "best_step": 200,
+      "since": 5,
+      "last_step": 300
+    },
+    "clip_budget": {
+      "limit": 20000,
+      "count": 7645
+    },
+    "reason": "early_stopping",
+    "best_checkpoint": "best_200.pt"
+  },
+  "unique_train_clips": 230,
+  "validation_clips": 15,
+  "reference_clips": 9,
+  "official_full_minival_clips": 150,
+  "photometric_augment": false,
+  "dino_additional_misses": 0,
+  "flow_additional_misses": 0,
+  "cuda_oom_retries": 0,
+  "quality": {
+    "unit_tests": 48,
+    "ruff": "pass",
+    "ty": "pass (configured training/cache/profiling scope)",
+    "runtime_shapes": "beartype + jaxtyping"
+  },
+  "throughput": {
+    "previous_seconds_per_update": 17.72,
+    "optimized_seconds_per_update": 13.394736842105264,
+    "previous_validation_interval": 100,
+    "optimized_validation_interval": 10,
+    "scope": "observed training updates including loader waits and intermediate validations; excludes prewarm, first resumed update, and final validation"
+  },
+  "reference": {
+    "method": "v35",
+    "split": "minival",
+    "clip_manifest": "configs/v64_metric_reference_minival.json",
+    "ckpt": "result/v64_official_mamba3_cache_phase/best_200.pt",
+    "per_subset": {
+      "pstudio": {
+        "average_jaccard": 0.07869064913195864,
+        "average_pts_within_thresh": 0.10973130130460217,
+        "occlusion_accuracy": 0.6683844924512338,
+        "metric_average_jaccard": 0.2501046123148827,
+        "metric_average_pts_within_thresh": 0.3992660733847126,
+        "metric_err_mean_m": 0.5367017388343811,
+        "metric_err_median_m": 0.36111414432525635
+      },
+      "drivetrack": {
+        "average_jaccard": 0.07334887467239996,
+        "average_pts_within_thresh": 0.116979868031911,
+        "occlusion_accuracy": 0.5135067787498527,
+        "metric_average_jaccard": 0.1012705917561912,
+        "metric_average_pts_within_thresh": 0.14725813573279295,
+        "metric_err_mean_m": 7.786598960558574,
+        "metric_err_median_m": 5.908126711845398
+      },
+      "adt": {
+        "average_jaccard": 0.20118559428406038,
+        "average_pts_within_thresh": 0.2859274593622026,
+        "occlusion_accuracy": 0.8494964191563082,
+        "metric_average_jaccard": 0.3906327781929699,
+        "metric_average_pts_within_thresh": 0.5258695226702153,
+        "metric_err_mean_m": 0.40489278237024945,
+        "metric_err_median_m": 0.14381520450115204
+      }
+    },
+    "overall": {
+      "average_jaccard": 0.11774170602947298,
+      "average_pts_within_thresh": 0.17087954289957194,
+      "occlusion_accuracy": 0.6771292301191316,
+      "metric_average_jaccard": 0.24733599408801457,
+      "metric_average_pts_within_thresh": 0.3574645772625736,
+      "metric_err_mean_m": 2.9093978272544017,
+      "metric_err_median_m": 2.1376853535572686
+    },
+    "frames": 1485,
+    "elapsed_s": 424.6613566875458,
+    "fps": 3.496904007426846,
+    "failures": 0
+  },
+  "comparison_to_previous_same_9_clips": {
+    "overall": {
+      "average_jaccard": {
+        "previous": 0.11023307347949278,
+        "current": 0.11774170602947298,
+        "change_percentage_points": 0.7508632549980201
+      },
+      "metric_average_jaccard": {
+        "previous": 0.22883299728767378,
+        "current": 0.24733599408801457,
+        "change_percentage_points": 1.8502996800340787
+      }
+    },
+    "pstudio": {
+      "average_jaccard": {
+        "previous": 0.0724809909543855,
+        "current": 0.07869064913195864,
+        "change_percentage_points": 0.6209658177573143
+      },
+      "metric_average_jaccard": {
+        "previous": 0.20742421366825184,
+        "current": 0.2501046123148827,
+        "change_percentage_points": 4.268039864663084
+      }
+    },
+    "drivetrack": {
+      "average_jaccard": {
+        "previous": 0.07540364399551347,
+        "current": 0.07334887467239996,
+        "change_percentage_points": -0.2054769323113506
+      },
+      "metric_average_jaccard": {
+        "previous": 0.10677578450101839,
+        "current": 0.1012705917561912,
+        "change_percentage_points": -0.5505192744827192
+      }
+    },
+    "adt": {
+      "average_jaccard": {
+        "previous": 0.1828145854885794,
+        "current": 0.20118559428406038,
+        "change_percentage_points": 1.837100879548098
+      },
+      "metric_average_jaccard": {
+        "previous": 0.3722989936937511,
+        "current": 0.3906327781929699,
+        "change_percentage_points": 1.8333784499218797
+      }
+    }
+  },
+  "paper_reference": {
+    "scope": "partial_minival_reference",
+    "reference_clips": 9,
+    "official_full_minival_clips": 150,
+    "checkpoint": "result/v64_official_mamba3_cache_phase/best_200.pt",
+    "official_metric_implementation": "TAPVid-3D median-scaled and absolute metric evaluators",
+    "reference_metric_average_jaccard": 0.24733599408801457,
+    "paper_full_minival_metric_average_jaccard": 0.256,
+    "difference_from_paper": -0.008664005911985434,
+    "fraction_of_paper": 0.9661562269063069,
+    "not_directly_comparable": "This fixed partial minival set uses official metric machinery but is a monitoring reference only. It is not comparable to the 150-clip paper headline."
+  },
+  "release": "https://github.com/yuki-inaho/vmamba3-3Dpointtracker/releases/tag/mamba3-preview-20261001-step200"
+}
