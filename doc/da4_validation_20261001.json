@@ -1,0 +1,127 @@
+{
+  "observed_at_utc": "2026-10-01T12:16:48.121149+00:00",
+  "run": "v64_official_mamba3_da4_cached",
+  "training_code_commit": "2bfcb9057282b20fe9310f9c3f65331dedf6311f",
+  "run_state": "in_progress",
+  "snapshot_step": 20,
+  "validation_protocol": {
+    "clips": 15,
+    "window_frames": 8,
+    "photometric_augment": false,
+    "rng_reset_each_validation": true,
+    "training_clips": 230,
+    "training_validation_clip_overlap": 0,
+    "growing_pool_sha256": "f4cc41d1868da7281cca8fcdbb2d82e16314cbc193a39031e80d9364020eab32",
+    "loss_description": "Visible-point L1 XYZ error normalized by per-clip anchor depth, plus delta-uv regularization; dimensionless and distinct from AJ or metre error."
+  },
+  "initial_checkpoint": {
+    "run": "v64_official_mamba3_cache_phase",
+    "step": 200,
+    "val_loss": 0.10282776057720185
+  },
+  "validation_history": [
+    {
+      "step": 0,
+      "val": {
+        "total": 0.10282776057720185,
+        "pos_3D": 0.11309719607234,
+        "pos_2D": 0.0001333778869593516,
+        "vis": 0.0
+      }
+    },
+    {
+      "step": 10,
+      "val": {
+        "total": 0.1033384503175815,
+        "pos_3D": 0.11365924552083015,
+        "pos_2D": 0.00013044191825125988,
+        "vis": 0.0
+      }
+    },
+    {
+      "step": 20,
+      "val": {
+        "total": 0.1034972108900547,
+        "pos_3D": 0.11383448864022891,
+        "pos_2D": 0.00012440676873666235,
+        "vis": 0.0
+      }
+    }
+  ],
+  "latest_vs_initial": {
+    "absolute_loss_change": 0.0006694503128528567,
+    "relative_loss_change_percent": 0.6510404477303,
+    "interpretation": "No validation improvement observed yet; latest loss is slightly higher than the starting best."
+  },
+  "training_status": {
+    "step": 20,
+    "max_steps": 250,
+    "early_stop": {
+      "patience": 3,
+      "min_delta": 0.001,
+      "mode": "min",
+      "best": 0.10282776057720185,
+      "best_step": 0,
+      "since": 0,
+      "last_step": 20
+    },
+    "clip_budget": {
+      "limit": 4096,
+      "count": 640
+    },
+    "reason": "running",
+    "best_checkpoint": "best_0.pt",
+    "fixed_da": {
+      "epoch": 0,
+      "offset": 20,
+      "signature": "905a3714dc60c7d7d16c770f976d6997f305c303c76436e8ed7d9f4c53f38d22",
+      "patterns": 4,
+      "batch_size": 32,
+      "block_clips": 32,
+      "repeats": 2,
+      "seed": 0
+    },
+    "fixed_da_pattern_counts": {
+      "softer": 160,
+      "harder": 160,
+      "darker": 160,
+      "brighter": 160
+    },
+    "fixed_da_unique_clip_patterns": 384
+  },
+  "early_stopping": {
+    "minimum_complete_epoch_steps": 60,
+    "earliest_possible_stop_step": 80,
+    "before_complete_epoch": "Best scores are observed, but bad-check count is reset until all clip-patterns have completed the first epoch (two uses each).",
+    "validation_every": 10,
+    "patience": 3,
+    "min_delta": 0.001
+  },
+  "da_reference_evaluation": {
+    "state": "pending_until_training_stops",
+    "clips": 9,
+    "full_minival_clips": 150,
+    "checkpoint_selection": "best checkpoint, including initial best_0 if DA does not improve it"
+  },
+  "previous_da_off_reference": {
+    "source": "doc/training_result_20261001.json",
+    "checkpoint_step": 200,
+    "clips": 9,
+    "full_minival_clips": 150,
+    "overall": {
+      "average_jaccard": 0.11774170602947298,
+      "average_pts_within_thresh": 0.17087954289957194,
+      "occlusion_accuracy": 0.6771292301191316,
+      "metric_average_jaccard": 0.24733599408801457,
+      "metric_average_pts_within_thresh": 0.3574645772625736,
+      "metric_err_mean_m": 2.9093978272544017,
+      "metric_err_median_m": 2.1376853535572686
+    },
+    "note": "Measured before DA; these are not measurements of the current DA checkpoint or the full 150-clip benchmark."
+  },
+  "source_artifact_sha256": {
+    "loss_history.json": "e444b682d980399604170883e070600db0e6a84e40d839061fa82d311709fafd",
+    "training_status.json": "cf20d228ec2ef689a5e6ac97d9d5d008c6fe4484c134c8db5310164ce6649366",
+    "checkpoints.json": "95fc959b288521f325caf31e852171b33a2da512e7460841ff9b62d29685ddcc"
+  }
+}

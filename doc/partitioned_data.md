@@ -399,6 +399,12 @@ bash -ic '. scripts/cudnn_env.sh && uv run python scripts/train_v64_staged.py \
 miss数を記録し、微調整終了後に同じ9/150 referenceをbest checkpointで自動評価します。
 DAなしbest200/検証15clipとの比較を維持し、最新stepを機械的に採用しません。
 
+2026-10-01の20更新時点では、検証lossは開始時0.1028278 → 10更新0.1033385 →
+20更新0.1034972で、DAによる改善はまだ確認できていません。
+同じ検証サンプルの比較と、測定済みのDAなしAJを
+[固定DAの検証記録](da4_validation_20261001.md)と
+[数値のJSON](da4_validation_20261001.json)に保存しています。この記録は途中経過です。
+
 人工データで4patternのDINO cache/live一致、生成後のflow再推論不要、finite loss/gradを検査:
 
 ```bash
@@ -444,13 +450,15 @@ flow cache/trackingの中央値は1.913秒から0.440秒になりました。ref
 
 [step200 preview release](https://github.com/yuki-inaho/vmamba3-3Dpointtracker/releases/tag/mamba3-preview-20261001-step200)
 に、約32.5 MBの評価用tracker重み・config・SHA256・学習条件を公開しています。
-固定heldout15本の検証lossは0.1028277606で、このvariantの公式AJは公開時点では未測定です。
+固定heldout15本の検証lossは0.1028277606です。全150clipでの公式AJは未測定で、
+固定9clipの監視用評価は下記に記録しています。
 optimizer/RNGとDINOv3 backboneは含みません。DINOは承認済みアカウントで別途取得してください。
-これはDAなし学習途中のartifactで、正式な全データ性能の報告ではありません。
+これは完了したDAなし段階のbest checkpointで、全データ性能の報告ではありません。
 
 2026-10-01のDAなし段階は300更新・7,645処理clipでEarly stoppingにより完了しました。
 bestは200更新（固定heldout15本のloss 0.1028277606）で、公開済み重みと同じものです。
-DA付き段階は開始していません。固定9/150 clipでの評価は失敗0件でした。
+DAなし完了時点ではDA付き段階は未開始でした。その後、上記の固定4パターンDAで追加学習を
+開始しています。DAなしbest200の固定9/150 clipでの評価は失敗0件でした。
 
 | 同じ固定9clipの指標 | 旧VSSD tracker | 公式Mamba-3 best200 |
 |---|---:|---:|
