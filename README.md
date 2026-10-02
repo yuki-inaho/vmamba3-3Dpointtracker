@@ -308,6 +308,14 @@ and [best80 GPU report](docs/evidence/onnx_gpu_20261002/best80_gpu_report.json).
 The root environment and deployment CLI remain CPU-ORT based; the GPU checker
 uses an isolated environment documented in the design note.
 
-GPU-ORT real-video AJ and speed, the fixed-nine acceptance gate, and full
-150-clip official minival are still **unverified**. The three-video demo compares
-native CUDA/BF16 with **CPU** ONNX, not GPU ONNX.
+The latest best80 was also replayed on CUDA ORT for all frames and tracks of
+the three preselected real-video clips (481 frames total). All four outputs
+passed the same numerical tolerance against CPU ORT. Metric-AJ was identical
+per clip; the largest absolute 3D-AJ difference was 7.51e-7. Actual CUDA kernels
+were verified from profiling; CPU nodes handled integer shape data only.
+See the [real-video GPU results and replay commands](docs/onnx_gpu_video_20261002.md).
+
+GPU speed benchmarks, the fixed-nine acceptance gate, and full 150-clip official
+minival remain **unverified**. These three clips were used for checkpoint
+selection and are not an independent test set. The saved three-video demo still
+shows native CUDA/BF16 versus **CPU** ONNX; it was not regenerated for GPU ORT.

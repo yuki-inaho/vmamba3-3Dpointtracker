@@ -159,5 +159,8 @@ CPUとGPUの人工入力検証は、標準演算と配布runtimeの数値一致�
 新best80では同一3本の全frames/all queriesでnative BF16とONNX CPU FP32を比較しましたが、validationから選んだ3本で独立testではありません。
 詳細と指標が悪化したsubsetは [継続メモ](session_memory_20261002.md#同一動画のトラッキング比較) と [比較summary](evidence/tracking_comparison_20261002/summary.json) に記録しています。
 
-**固定9本の受入gate、公式minival全150本、CUDA ORTの実動画AJ、GPU性能benchmark、他GPU/他OSは未評価です。**
+追加の [CUDA ORT実動画検証](onnx_gpu_video_20261002.md) では、best80で同じ3本の全481 frames/all queriesをreplayしました。
+GPU対CPUの全4出力が同じ固定閾値で成功し、各clipのmetric-AJは同値、3D-AJ最大差は7.51e-7でした。profileの主要演算CUDA/整数形状のみCPUも確認済みです。
+
+**固定9本の受入gate、公式minival全150本、GPU性能benchmark、他GPU/他OSは未評価です。**
 今回のGPU検証を、これらの合格や本番採用の証明として扱いません。

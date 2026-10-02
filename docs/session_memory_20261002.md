@@ -3,7 +3,8 @@
 2026年10月2日の一連の作業を、次回の担当者が再調査せず継続するためにまとめます。
 新しい保守的な未使用データ集合を取得し、DA無しキャッシュと訓練を完了、最良step80をReleaseの推奨にしました。
 同じ3動画で旧モデル・新モデル・新ONNX CPUを比較し、別途旧新ONNXのCUDA実行も検証しました。
-ただし公式minival全150本、固定9本の受入評価、GPU版ORTの実動画AJは未評価です。
+best80は追加で同じ3本の実入力をGPU版ORTにreplayし、全481Fの実GPU動作とAJも確認しました。
+ただし公式minival全150本、固定9本の受入評価、GPU性能benchmarkは未評価です。
 
 ## 作業の位置づけ
 
@@ -129,6 +130,11 @@ profileで主計算のCUDA実行を確認し、CPU併用はint64の形状処理�
 [best200 GPU report](evidence/onnx_gpu_20261002/best200_gpu_report.json) と [best80 GPU report](evidence/onnx_gpu_20261002/best80_gpu_report.json) を参照してください。
 rootのCPU ORT/uv.lockは変更せず、GPU環境は `result/onnx_gpu_20261002/.venv/` へ隔離しています。
 
+その後、[GPU実動画検証](onnx_gpu_video_20261002.md) で同じ3本の全481F/全tracksをlatest best80でreplayしました。
+入力signatureは旧比較と一致、4出力はCPU ORTと固定閾値で一致しました。metric-AJは各clipで同値、3D-AJ最大差7.51e-7、主要計算CUDA/CPUint形状のみをprofileで確認しました。
+新7回帰ケースを追加し全156単体テスト成功。前段main統合時の149件とは検証時点が異なります。
+新しい原本は `result/onnx_gpu_video_20261002/`、小型証跡は `docs/evidence/onnx_gpu_video_20261002/` です。元Desktop動画・reportsは不変です。
+
 ## 統合対象のソース変更と品質確認
 
 今回の訓練で使用し、残っていた変更は次の3点です。推論のarchitectureや公開重みは変更しません。
@@ -138,7 +144,7 @@ rootのCPU ORT/uv.lockは変更せず、GPU環境は `result/onnx_gpu_20261002/.
 - `dataset.py`、`bucket_batch.py`、`fixed_da.py`: workerのthread/contextを明示し、訓練とcache prewarmでloader optionを共有する。複数threadのworkerはspawnを要求し、resize/key不一致を防ぐ。
 
 GPU検証CLIとprofile判定の6回帰ケースも追加しました。
-最終単体テストは **149 passed / 26 warnings**。warningsは既存のforkとNumPy scalar変換のdeprecationです。
+main統合時の単体テストは **149 passed / 26 warnings**。warningsは既存のforkとNumPy scalar変換のdeprecationです。後続のGPU実動画検証では156件へ増えています。
 対象15 Python filesのruff、既存incremental ty gate、GPU checker/testのty、対象12 filesのformat check、diff checkが成功しています。
 大きな既存legacyファイルを丸ごと整形してはいません。[品質記録](evidence/integration_20261002/quality.json) に検証範囲を記録しています。
 
@@ -195,5 +201,5 @@ GPU推論にはbashから `source scripts/cudnn_env.sh` を実行し、認証済
 token値をechoせず、秘密を含む `~/.bashrc` の内容をGit/docsにコピーしません。
 詳細な生成手順は [root READMEのデモ節](../README.md#46-tracking-comparison-demo)、GPU再検証は [ONNX方式文書](onnx_export_design_20261002.md#gpu版runtimeの再検証) を参照してください。
 
-継続が必要な未評価項目は、公式minival全150本、固定9本のnative/ONNX受入gate、GPU版ORTの実動画AJ・速度、他GPU/他OSです。
+継続が必要な未評価項目は、公式minival全150本、固定9本のnative/ONNX受入gate、GPU性能benchmark、他GPU/他OSです。
 今回の成果だけでこれらの合格や本番採用を宣言しません。

@@ -1,0 +1,311 @@
+{
+  "schema_version": 1,
+  "ready": true,
+  "scope": "three preselected training-validation clips; not official minival and not an independent test set",
+  "checkpoint_step": 80,
+  "checkpoint_sha256": "c022511872c2d59a39bc1c39a3c62f44c142ee8ff9ca7dc7859881a78ae490b7",
+  "onnx_sha256": "7b1530c38e01496e60f67ef1cd6b9eb2ebb250ec8108cb908d9c07217edef604",
+  "source_manifest_sha256": "59e3d162184f43f9ddfbc4709b61fec69ec40a7795bd7532aa137ed5d532e150",
+  "onnx": "weights/mamba3-preview-20261002-best80/tracker_mamba3_step80.onnx",
+  "track_chunk": 8,
+  "memory_budget_mib": 1024,
+  "cases": [
+    {
+      "subset": "pstudio",
+      "path": "/workspace/vmamba3_data/tapvid3d/pstudio/boxes_21.npz",
+      "frames": 150,
+      "tracks": 460,
+      "raw_sha256": "603252618095ffddac3cec11d5e061e870ed3d9a918d044746c18042eec29b4f",
+      "depth_sha256": "5d02d5ec60a344ccb4c7d14ff4c0884ddf13ec2db13659e32a99032853b62ad5",
+      "inputs": "pstudio_inputs.npz",
+      "inputs_sha256": "26d8275cb5b2451628ae7895c5f245b455ca7de281e0608c35b8d4c49aeb2a49",
+      "input_signature": {
+        "ray": {
+          "shape": [
+            1,
+            150,
+            460,
+            2
+          ],
+          "dtype": "float32",
+          "sha256": "17a8d01499cb59f035da0b779a48027f8fc132062da3ee1c037e88d158de20f7"
+        },
+        "z_raw": {
+          "shape": [
+            1,
+            150,
+            460
+          ],
+          "dtype": "float32",
+          "sha256": "bfe393475d413491b4d54a84f2c7385cf08800cada93c2527f9b7eab5e38c810"
+        },
+        "visibility": {
+          "shape": [
+            1,
+            150,
+            460
+          ],
+          "dtype": "float32",
+          "sha256": "5a812092e81858c1ee165a8f3dc3dca90dcc26d862b4558169cf082ad117abb8"
+        },
+        "uv": {
+          "shape": [
+            1,
+            150,
+            460,
+            2
+          ],
+          "dtype": "float32",
+          "sha256": "122f7a2707555fcfaa236050149952bc7c219ac6f1bb85f58cee3dc5fd105152"
+        },
+        "depth_map": {
+          "shape": [
+            1,
+            150,
+            280,
+            504
+          ],
+          "dtype": "float32",
+          "sha256": "6bf7d074acfb5dc0af440b962546d455ae07c1d97e12e4e16c605d5543f453b3"
+        },
+        "dino_features": {
+          "shape": [
+            1,
+            150,
+            384,
+            28,
+            28
+          ],
+          "dtype": "float32",
+          "sha256": "8b84ff769f88c80adc44bb008df4df2a47d51311b41746cefdfd38075d192b23"
+        },
+        "intrinsics": {
+          "shape": [
+            1,
+            3,
+            3
+          ],
+          "dtype": "float32",
+          "sha256": "5f6499f537d80845fd123ede4309e4ce788a863aab37489fcd8bd96566669bf9"
+        },
+        "z_ref": {
+          "shape": [],
+          "dtype": "float32",
+          "sha256": "636c6d3f636b95d24a3a44e0054953dfcc5dd05d8e39a07914869682e5471221"
+        }
+      },
+      "cpu_prediction": "predictions/pstudio.npz",
+      "cpu_prediction_sha256": "f05e3aefd7508328dcca485d69b8593d6e977e98f9b6871532346033bb31c5c3",
+      "prepare_report": "reports/pstudio.json",
+      "prepare_report_sha256": "887cd1f5f2df54d07de9cf2901c39d33d2c6be052b42a810ecedc550e93f23e5",
+      "previous_frontend_tensor_matches": {
+        "ray": true,
+        "z_raw": true,
+        "visibility": true,
+        "uv": true,
+        "depth_map": true,
+        "dino_features": true,
+        "intrinsics": true
+      },
+      "previous_report_sha256": "d5c6d26b1a0d777bd978316a7a1788dc76eb42643d5d289e08f490b426b41b78"
+    },
+    {
+      "subset": "drivetrack",
+      "path": "/workspace/vmamba3_data/tapvid3d/drivetrack/tapvid3d_2739239662326039445_5890_320_5910_320_2_9c_GVNEfaFivtmm6v34DtQ.npz",
+      "frames": 31,
+      "tracks": 256,
+      "raw_sha256": "d71240b4adb5cdc0cb45e1a24df72b1e7a1d7d22259458ae74868f0a71735a0f",
+      "depth_sha256": "1ebd3c3135c5b7d95e404fe228c889ac9b82a5e82094d00f271d68d71de5f00b",
+      "inputs": "drivetrack_inputs.npz",
+      "inputs_sha256": "c88aa504b630c402cd90cbd5e0a1550a486361a6a0df87489179cd217cc62aef",
+      "input_signature": {
+        "ray": {
+          "shape": [
+            1,
+            31,
+            256,
+            2
+          ],
+          "dtype": "float32",
+          "sha256": "9d74f491c4673114fdd268804c977cdf98a994edf99866dad36c95a47ab6b1f5"
+        },
+        "z_raw": {
+          "shape": [
+            1,
+            31,
+            256
+          ],
+          "dtype": "float32",
+          "sha256": "36e815be1cdca6225d5edb3f71040e2f57fb581ca43590ecdd9c660d4e731d4b"
+        },
+        "visibility": {
+          "shape": [
+            1,
+            31,
+            256
+          ],
+          "dtype": "float32",
+          "sha256": "6fcabd673242d856062a8a2c45cddb828eadbf22f3291da28254d99aa3765979"
+        },
+        "uv": {
+          "shape": [
+            1,
+            31,
+            256,
+            2
+          ],
+          "dtype": "float32",
+          "sha256": "27aed2528c16053188d159d90dbb7684339d4347d103e928166b4398c89e967a"
+        },
+        "depth_map": {
+          "shape": [
+            1,
+            31,
+            336,
+            504
+          ],
+          "dtype": "float32",
+          "sha256": "259d9b9ec36317a73b913fa702c36e625df5c11330a61ef8aa20130d39006210"
+        },
+        "dino_features": {
+          "shape": [
+            1,
+            31,
+            384,
+            28,
+            28
+          ],
+          "dtype": "float32",
+          "sha256": "61d7082ced3a7cb6fac2d69821be3f202e66ca23c68617cba7af7dd42f6b4b58"
+        },
+        "intrinsics": {
+          "shape": [
+            1,
+            3,
+            3
+          ],
+          "dtype": "float32",
+          "sha256": "90842cc36c183aec75d6fb2cf41798284e5bb68456ab3f86adda7228a6161346"
+        },
+        "z_ref": {
+          "shape": [],
+          "dtype": "float32",
+          "sha256": "2c83ea5a6b010d786fd6ef52c5acf04a1e918250912b349de7981c2aae7095e5"
+        }
+      },
+      "cpu_prediction": "predictions/drivetrack.npz",
+      "cpu_prediction_sha256": "7ef90298179181a011da84e3104c9f0b0092ad8bb9a993d36fca1dec06c82817",
+      "prepare_report": "reports/drivetrack.json",
+      "prepare_report_sha256": "392f33a14fe9bc53a0d1c6ddc21d0e88bbd2c3838e312dacf8f1ff4e91abdbdf",
+      "previous_frontend_tensor_matches": {
+        "ray": true,
+        "z_raw": true,
+        "visibility": true,
+        "uv": true,
+        "depth_map": true,
+        "dino_features": true,
+        "intrinsics": true
+      },
+      "previous_report_sha256": "0adc49362146ead4ba75afa6b47b5f238196202540a9a2331527184ca77fd0f1"
+    },
+    {
+      "subset": "adt",
+      "path": "/workspace/vmamba3_data/tapvid3d/adt/Apartment_release_multiuser_cook_seq143_0.npz",
+      "frames": 300,
+      "tracks": 900,
+      "raw_sha256": "8f810d9314655150c22edf01b0dcfadd7cf7091aea947df7774dfee80d3837cc",
+      "depth_sha256": "1e58ee75cb68cdf3df7f358994d2b84987485e407d7f36f54e28a8893d50c866",
+      "inputs": "adt_inputs.npz",
+      "inputs_sha256": "8dcc77c81946903ff85593c6b274d46c587effce5abfc3ebea331714f7d107ce",
+      "input_signature": {
+        "ray": {
+          "shape": [
+            1,
+            300,
+            900,
+            2
+          ],
+          "dtype": "float32",
+          "sha256": "a0ee544519b789847abeadf64d297a70b44921d0e83702cda29a07746a33d171"
+        },
+        "z_raw": {
+          "shape": [
+            1,
+            300,
+            900
+          ],
+          "dtype": "float32",
+          "sha256": "71c2cb7587b47df62a565ec9e8d463803e6ed32b8f73bbdbe626f33eaea4e960"
+        },
+        "visibility": {
+          "shape": [
+            1,
+            300,
+            900
+          ],
+          "dtype": "float32",
+          "sha256": "e5e66198d6dfec35ded0e594420e0d203acd88efcfbcca6985d41c3f75b242ce"
+        },
+        "uv": {
+          "shape": [
+            1,
+            300,
+            900,
+            2
+          ],
+          "dtype": "float32",
+          "sha256": "0435056b3285b2d99e91d656e76b5bdb304a79587bda946bacc87f49f7f691dd"
+        },
+        "depth_map": {
+          "shape": [
+            1,
+            300,
+            504,
+            504
+          ],
+          "dtype": "float32",
+          "sha256": "bf4d7f5ce80aa7aaf37725bf1255238d2186159242bc722a67a3fbccb59142ff"
+        },
+        "dino_features": {
+          "shape": [
+            1,
+            300,
+            384,
+            28,
+            28
+          ],
+          "dtype": "float32",
+          "sha256": "6f3dd457d396ffb49ff0562ecb3c4a4ad2e4f568c61df2fa308ee426191edd4a"
+        },
+        "intrinsics": {
+          "shape": [
+            1,
+            3,
+            3
+          ],
+          "dtype": "float32",
+          "sha256": "b0d6f8f1d137f3b0e0d12b0458fd79439db3e9c5d2363fc62ccd32ac681e138c"
+        },
+        "z_ref": {
+          "shape": [],
+          "dtype": "float32",
+          "sha256": "ff033d80f7f72d572f2ac804182bdff3af29feea7d311267c96f9733ec65e9aa"
+        }
+      },
+      "cpu_prediction": "predictions/adt.npz",
+      "cpu_prediction_sha256": "4d449b54a9a41652b24eb603fb01a8d3103f881ca47cf30e3d7b852f1176c9a5",
+      "prepare_report": "reports/adt.json",
+      "prepare_report_sha256": "9800c7f2511916462c61e33fd06507b68cad7be0b438ac5255f45f439e2221f5",
+      "previous_frontend_tensor_matches": {
+        "ray": true,
+        "z_raw": true,
+        "visibility": true,
+        "uv": true,
+        "depth_map": true,
+        "dino_features": true,
+        "intrinsics": true
+      },
+      "previous_report_sha256": "e5a211dc9ef1a0248c9b06e1919e75a04f03d58e345d78a49bcf6939f869e6c4"
+    }
+  ]
+}

@@ -1,0 +1,20 @@
+{
+  "success": true,
+  "date": "2026-10-02",
+  "unit_tests": {"passed": 156, "warnings": 26},
+  "target_python_files": ["scripts/verify_refiner_gpu_video.py", "tests/unit/test_onnx_gpu_video.py"],
+  "ruff_check_passed": true,
+  "ruff_format_check_passed": true,
+  "ty_target_check_passed": true,
+  "ty_project_incremental_check_passed": true,
+  "git_diff_check_passed": true,
+  "root_ort": {"version": "1.30.0", "providers": ["AzureExecutionProvider", "CPUExecutionProvider"]},
+  "uv_lock_sha256": "259ade098c242f8b200cb907030ee76fa6bc9d85c91ffccc3b448647b02ae075",
+  "original_model_and_four_videos_sha256_unchanged": true,
+  "original_three_desktop_reports_sha256_unchanged": true,
+  "real_video_gpu_aj_evaluated": true,
+  "official_fixed9_evaluated": false,
+  "official_full_minival_evaluated": false,
+  "gpu_performance_benchmark": false,
+  "artifacts_staged": false
+}
