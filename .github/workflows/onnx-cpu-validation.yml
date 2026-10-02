@@ -1,0 +1,138 @@
+name: ONNX implementation verification
+on:
+  push:
+    branches: [work/onnx-best200-20261001]
+    paths: ['.github/workflows/onnx-cpu-validation.yml']
+  workflow_dispatch:
+permissions:
+  contents: write
+jobs:
+  verify-reviewed-source:
+    runs-on: ubuntu-24.04
+    timeout-minutes: 25
+    steps:
+      - uses: actions/checkout@v4
+        with:
+          fetch-depth: 2
+      - uses: astral-sh/setup-uv@v6
+      - name: Materialize the hash-verified source-only patch
+        env:
+          GH_TOKEN: ${{ github.token }}
+        run: |
+          python3 - <<'PY'
+          import base64, hashlib, json, lzma, subprocess
+          from pathlib import Path
+          blobs = ['70c90899e2fbf1fb68b9d4ed1f6c26bbe23715ab', '834760367222997c87b12a775f9662fdf3a39eb8', '697f9397cf86c1d969f1da4050608d37f2df72bc', '3dac289e995d3a3191efcc394997175d588e6bc8', '56e001b7a6259d3adc464ed9654b5a8cde74e00b', '9a4995c16c57fcdb84cdd16ab868ae3ff0a0968e']
+          payload = b''.join(base64.b64decode(subprocess.check_output(['gh', 'api', 'repos/yuki-inaho/vmamba3-3Dpointtracker/git/blobs/' + sha, '--jq', '.content'])) for sha in blobs)
+          patch = lzma.decompress(base64.b64decode(payload, validate=True))
+          if hashlib.sha256(patch).hexdigest() != '3b6c07bed00cc42d4487657370464819a2a2bdd49352df8b9fafca6d17efdc80':
+              raise RuntimeError('Source patch checksum mismatch')
+          target = Path('/tmp/onnx-reviewed.patch')
+          target.write_bytes(patch)
+          paths = [line.split('\t', 2)[2] for line in subprocess.check_output(['git', 'apply', '--numstat', str(target)], text=True).splitlines()]
+          if len(paths) != 29 or any('..' in Path(p).parts or Path(p).is_absolute() for p in paths):
+              raise RuntimeError('Unexpected source inventory')
+          Path('/tmp/onnx-source-paths.json').write_text(json.dumps(paths))
+          options = ['--exclude=.github/workflows/refiner-cpu.yml']
+          subprocess.run(['git', 'apply', '--check', *options, str(target)], check=True)
+          subprocess.run(['git', 'apply', *options, str(target)], check=True)
+          print('Applied 29-file source inventory; no model, data or credentials in patch.')
+          launcher = Path('scripts/validate_refiner_cpu.py')
+          original = launcher.read_text()
+          corrected = original.replace('stdout=subprocess.PIPE, stderr=subprocess.STDOUT, check=False)', 'stdout=subprocess.PIPE, stderr=subprocess.PIPE, check=False)').replace('text = result.stdout.replace(str(ROOT), "<workspace>")', 'text = (result.stdout + "\\n[stderr]\\n" + result.stderr).replace(str(ROOT), "<workspace>")')
+          if corrected == original:
+              raise RuntimeError('Expected stderr correction target missing')
+          launcher.write_text(corrected)
+          regression = '''
+
+          def test_quality_versions_ignore_stderr_warnings(tmp_path, monkeypatch):
+              import importlib.util
+              import json
+              import subprocess
+              import sys
+
+              spec = importlib.util.spec_from_file_location("cpu_verification", ROOT / "scripts/validate_refiner_cpu.py")
+              module = importlib.util.module_from_spec(spec)
+              spec.loader.exec_module(module)
+              monkeypatch.setattr(module, "ROOT", tmp_path)
+              monkeypatch.setattr(module, "digest", lambda _: "bcddf045311b76a91bc772e35901acbdb99f397b752ee0ba4beacb3fb1ded5f4")
+              monkeypatch.setattr(sys, "argv", ["validate_refiner_cpu.py", "--ckpt", str(tmp_path / "model.pt"),
+                                              "--sdk-root", str(tmp_path / "sdk")])
+
+              def fake_run(command, **kwargs):
+                  if "scripts/export_refiner_onnx.py" in command:
+                      raise RuntimeError("stop after version parsing")
+                  is_versions = any("import json,sys,torch" in item for item in command)
+                  stdout = json.dumps({"python": "test"}) if is_versions else ""
+                  stderr = "ORT device warning\\n" if is_versions else ""
+                  if kwargs.get("stderr") == subprocess.STDOUT:
+                      stdout, stderr = stderr + stdout, ""
+                  return subprocess.CompletedProcess(command, 0, stdout, stderr)
+
+              monkeypatch.setattr(module.subprocess, "run", fake_run)
+              with pytest.raises(RuntimeError, match="stop after version parsing"):
+                  module.main()
+              result = json.loads((tmp_path / "result/onnx_best200_cpu/quality.json").read_text())
+              assert result["versions"] == {"python": "test"}
+              assert result["success"] is False
+              assert "ORT device warning" in (tmp_path / "result/onnx_best200_cpu/logs/versions.txt").read_text()
+          '''
+          test = Path('tests/unit/test_onnx_refiner_protocol.py')
+          test.write_text(test.read_text() + regression)
+          PY
+      - name: Prepare pinned dependencies and original public weights
+        run: |
+          git submodule update --init --recursive third_party/visionMamba3
+          uv sync --locked --extra onnx --python 3.12
+          uv lock --project deploy/onnx_cpu --python 3.12
+          mkdir -p weights result/sdk
+          curl -fL --retry 3 https://github.com/yuki-inaho/vmamba3-3Dpointtracker/releases/download/mamba3-preview-20261001-step200/tracker_mamba3_daoff_best200.pt -o weights/tracker_mamba3_daoff_best200.pt
+          echo 'bcddf045311b76a91bc772e35901acbdb99f397b752ee0ba4beacb3fb1ded5f4  weights/tracker_mamba3_daoff_best200.pt' | sha256sum -c -
+          curl -fL --retry 3 https://github.com/microsoft/onnxruntime/releases/download/v1.30.0/onnxruntime-linux-x64-1.30.0.tgz -o result/sdk/ort.tgz
+          echo 'a5ed5a3cac51fbb2e90da632ae43d19212faaa20e76484e62bcb7c23ddb3b3fd  result/sdk/ort.tgz' | sha256sum -c -
+          tar -xzf result/sdk/ort.tgz -C result/sdk
+      - name: Run all CPU gates and independent inference
+        run: python3 scripts/validate_refiner_cpu.py --ckpt weights/tracker_mamba3_daoff_best200.pt --sdk-root result/sdk/onnxruntime-linux-x64-1.30.0
+      - name: Commit only passing source, locks and small evidence to the work branch
+        run: |
+          python3 - <<'PY'
+          import hashlib, json, subprocess, tarfile
+          from pathlib import Path
+          quality = json.loads(Path('result/onnx_best200_cpu/quality.json').read_text())
+          if not quality['success'] or quality['full_dod_satisfied'] or quality['task_accuracy_verified']:
+              raise RuntimeError('CPU-only validation status was not preserved')
+          paths = json.loads(Path('/tmp/onnx-source-paths.json').read_text())
+          paths += ['deploy/onnx_cpu/uv.lock']
+          paths += [str(p) for p in Path('docs/evidence/onnx_best200_cpu').iterdir() if p.is_file()]
+          paths = sorted(set(paths))
+          if any(Path(p).suffix in ('.onnx', '.pt', '.so', '.npy', '.npz') for p in paths):
+              raise RuntimeError('Binary artifact in source inventory')
+          subprocess.run(['git', 'config', 'user.name', 'github-actions[bot]'], check=True)
+          subprocess.run(['git', 'config', 'user.email', '41898282+github-actions[bot]@users.noreply.github.com'], check=True)
+          subprocess.run(['git', 'add', '--', *paths], check=True)
+          subprocess.run(['git', 'commit', '-m', 'feat: verify best200 ONNX and C++ CPU refiner with strict evaluation gates'], check=True)
+          subprocess.run(['git', 'push', 'origin', 'HEAD:work/onnx-best200-20261001'], check=True)
+          items = []
+          for line in subprocess.check_output(['git', 'ls-files', '--stage', '--', *paths], text=True).splitlines():
+              spec, name = line.split('\t', 1)
+              mode, sha, stage = spec.split()
+              items.append(dict(path=name, mode=mode, type='blob', sha=sha, sha256=hashlib.sha256(Path(name).read_bytes()).hexdigest()))
+          record = dict(commit=subprocess.check_output(['git', 'rev-parse', 'HEAD'], text=True).strip(), files=items, cpu_verified=True, full_dod_satisfied=False)
+          Path('result/source_manifest.json').write_text(json.dumps(record, indent=2) + '\n')
+          with tarfile.open('result/verified_source.tar.gz', 'w:gz') as archive:
+              for name in paths:
+                  archive.add(name, arcname=name, recursive=False)
+          PY
+      - uses: actions/upload-artifact@v4
+        if: always()
+        with:
+          name: best200-verified-implementation
+          path: |
+            result/onnx_best200_cpu/
+            result/cpp_runtime/
+            result/source_manifest.json
+            result/verified_source.tar.gz
+            deploy/onnx_cpu/uv.lock
+            docs/evidence/onnx_best200_cpu/
+          retention-days: 14
+          if-no-files-found: warn
