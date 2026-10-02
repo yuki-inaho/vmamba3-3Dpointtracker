@@ -96,8 +96,10 @@ uv run pytest
 
 ## 4. How to use
 
-No trained checkpoints are released yet, so reproducing the result means training the refiner and
-the visibility head. All paths below are the configs' defaults.
+No trained checkpoints for the paper's v64 + v94 configuration are released here, so reproducing
+that result means training the refiner and the visibility head. The experimental Mamba-3 preview
+checkpoints used by the comparison demo (4.6) are separate. All training paths below are the
+configs' defaults.
 
 ### 4.1 Data
 
@@ -179,6 +181,53 @@ uv run python scripts/track_custom_video.py my_video.mp4 --ckpt <checkpoint> --o
 
 This script runs the earlier v33 variant: SEA-RAFT flow (needs the `SEA-RAFT` baseline submodule,
 see 5.1) with the depth-only refiner, not the paper's v64 model.
+
+### 4.6 Tracking comparison demo
+
+[scripts/demo_tracking_comparison.py](scripts/demo_tracking_comparison.py) is the demo entry point
+for the existing [comparison pipeline](scripts/compare_release_tracking.py), with rendering in
+[viz/comparison.py](src/mamba3_tracker/viz/comparison.py). The original pipeline CLI remains
+supported; the demo does not start training or modify GitHub Releases.
+
+The three columns show the old preview **best200**, new **best80** native CUDA/BF16, and new
+**best80 ONNX** CPU/FP32 on the same inputs. There is one predeclared validation clip from each
+of PStudio, DriveTrack, and ADT, with matching point IDs, colors, cameras, and 3D axes. This is
+not the paper's v64 + v94 evaluation, the fixed-nine acceptance protocol, or the full 150-clip
+official minival. These clips belong to the validation set used for checkpoint selection, not
+an independent test set. Numerical ONNX differences are recorded, not assumed to be zero.
+
+Run from the repository root after `uv sync --extra onnx`. The prepared demo directory defaults
+to `../tracking_comparison_20261002` (on this machine, the Desktop). It contains `manifest.json`,
+saved `predictions/*.npz`, and `reports/*.json`; the manifest pins the model and data paths and
+SHA256 hashes. Keep the referenced raw clips, depth files, validation-pool manifest, run config,
+and old/new PT and ONNX files available: all stages validate provenance. Nothing is downloaded
+automatically, and an empty output directory cannot bootstrap the demo. To use a relocated,
+already prepared demo directory, pass `--out-dir /path/to/tracking_comparison_20261002`.
+
+Re-render the saved predictions and then validate the generated videos on CPU (no GPU or
+Hugging Face download is needed for these two stages; `ffmpeg` and `ffprobe` must be installed):
+
+```bash
+uv run python scripts/demo_tracking_comparison.py --stage render
+uv run python scripts/demo_tracking_comparison.py --stage audit
+```
+
+`render` replaces the generated videos and snapshots. `audit` decodes all videos and refreshes
+the output directory's `README.md` and `reports/summary.json`. Outputs include
+`comparison_all.mp4`, `comparison_{pstudio,drivetrack,adt}.mp4`, `comparison_overview.png`, and
+per-clip snapshots. See the output README for measured scores and limitations.
+
+Only if new predictions are needed, first enable the native CUDA/Mamba-3 environment and make
+the pinned DINOv3 weights available (the gated model requires an authorized Hugging Face account
+if it is not already cached). The inference stage requires an explicit subset and replaces its
+saved predictions/report; run `render` and `audit` afterward:
+
+```bash
+source scripts/cudnn_env.sh
+uv run python scripts/demo_tracking_comparison.py --stage infer --subset pstudio
+uv run python scripts/demo_tracking_comparison.py --stage infer --subset drivetrack
+uv run python scripts/demo_tracking_comparison.py --stage infer --subset adt
+```
 
 ## 5. Evaluation
 
