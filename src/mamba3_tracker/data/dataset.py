@@ -61,6 +61,8 @@ class TAPVid3DDataset(Dataset):
         reanchor_window: bool = True,
         fixed_window_seed: int | None = None,
         fixed_patterns: tuple[PhotometricPattern, ...] | None = None,
+        worker_cpu_threads: int | None = None,
+        worker_multiprocessing_context: str | None = None,
     ) -> None:
         self.clip_paths = list(clip_paths)
         self.window_size = window_size
@@ -74,6 +76,10 @@ class TAPVid3DDataset(Dataset):
         self._rng = random.Random(seed)
         self.fixed_window_seed = fixed_window_seed
         self.fixed_patterns = fixed_patterns
+        from .bucket_batch import validate_worker_configuration
+        validate_worker_configuration(worker_cpu_threads, worker_multiprocessing_context)
+        self.worker_cpu_threads = worker_cpu_threads
+        self.worker_multiprocessing_context = worker_multiprocessing_context
         if fixed_patterns and (not augment or fixed_window_seed is None):
             raise ValueError("Fixed DA requires augmentation and a fixed window seed")
         if fixed_window_seed is not None and augment and not fixed_patterns:

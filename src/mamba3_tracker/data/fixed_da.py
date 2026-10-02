@@ -67,13 +67,12 @@ def prewarm_loader(dataset: Dataset, indices: list[DAIndex], batch_size: int,
     PyTorch's single-thread and multithread CPU resize paths can differ by an
     ULP. Hashing those images requires warming with the same worker context.
     """
-    from .bucket_batch import seed_tracking_worker
+    from .bucket_batch import worker_loader_options
     from .dataset import collate_tracking
 
     return DataLoader(dataset, batch_size=batch_size, sampler=indices,
-                      num_workers=training_workers, collate_fn=collate_tracking,
-                      worker_init_fn=seed_tracking_worker, persistent_workers=False,
-                      prefetch_factor=1 if training_workers > 0 else None)
+                      collate_fn=collate_tracking,
+                      **worker_loader_options(dataset, training_workers))
 
 
 class ClipDataset(Protocol):

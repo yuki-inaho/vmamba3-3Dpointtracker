@@ -1,0 +1,42 @@
+{
+  "version": "v35",
+  "model": {
+    "d_proj": 64,
+    "dim": 128,
+    "dino_image_size": 448,
+    "dino_model": "facebook/dinov3-vits16-pretrain-lvd1689m",
+    "image_size": 896,
+    "max_delta_uv": 2.0,
+    "max_log_correction": 2.0,
+    "num_heads": 4,
+    "num_layers": 2,
+    "official_mamba3_bidirectional": true,
+    "official_mamba3_track_chunk": 128,
+    "patch_size": 5,
+    "state_dim": 64,
+    "temporal_mixer": "official_mamba3",
+    "two_pool": false
+  },
+  "flow": {
+    "cfg": "third_party/SEA-RAFT/config/eval/spring-M.json",
+    "fb_alpha": 0.05,
+    "fb_beta": 1.0,
+    "iters": 4,
+    "scale": -1,
+    "source": "waft_live",
+    "url": "MemorySlices/Tartan-C-T-TSKH-spring540x960-M"
+  },
+  "data": {
+    "image_size": 896
+  },
+  "loss": {
+    "weights": {
+      "pos_3D": 0.9090909090909091,
+      "reg_uv": 0.09090909090909091
+    },
+    "weights_raw": {
+      "pos_3D": 1.0,
+      "reg_uv": 0.1
+    }
+  }
+}

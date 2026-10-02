@@ -434,6 +434,7 @@ def _motion_check(
     fb_beta,
     max_frames=32,
     n_clips=5,
+    da3_depth_root=None,
 ):
     """Pixel travel ratio per subset."""
     model.eval()
@@ -474,7 +475,7 @@ def _motion_check(
         K_t = torch.from_numpy(Ks).float().unsqueeze(0).to(device)
         ray = _ray_from_uv(uv_d, K_t)
         depth_path = (
-            Path("~/data/tapvid3d_da3").expanduser()
+            Path(da3_depth_root if da3_depth_root is not None else "~/data/tapvid3d_da3").expanduser()
             / clip.subset
             / (clip.clip_id + ".npz")
         )
@@ -791,6 +792,8 @@ def main() -> int:
         fixed_window_seed=data_cfg.get("fixed_window_seed"),
         fixed_patterns=parse_patterns(data_cfg["fixed_da"]["patterns"])
         if data_cfg.get("fixed_da") else None,
+        worker_cpu_threads=train_cfg.get("worker_cpu_threads"),
+        worker_multiprocessing_context=train_cfg.get("worker_multiprocessing_context"),
     )
     val_ds = TAPVid3DDataset(
         val_clips,
@@ -802,11 +805,10 @@ def main() -> int:
         da3_depth_root=da3_depth_root,
         reanchor_window=reanchor_window,
     )
-    from mamba3_tracker.data.bucket_batch import DepthBucketBatchSampler, seed_tracking_worker
-    loader_options = dict(num_workers=int(train_cfg["num_workers"]), collate_fn=collate_tracking,
-                          pin_memory=True, persistent_workers=False, worker_init_fn=seed_tracking_worker)
-    if loader_options["num_workers"] > 0:
-        loader_options["prefetch_factor"] = int(train_cfg.get("prefetch_factor", 1))
+    from mamba3_tracker.data.bucket_batch import DepthBucketBatchSampler, worker_loader_options
+    loader_options = dict(collate_fn=collate_tracking, pin_memory=True,
+                          **worker_loader_options(train_ds, int(train_cfg["num_workers"]),
+                                                  int(train_cfg.get("prefetch_factor", 1))))
     fixed_da_sampler = None
     if train_ds.fixed_patterns:
         fixed_da_cfg = data_cfg["fixed_da"]
@@ -1608,6 +1610,7 @@ def main() -> int:
                     image_size,
                     fb_alpha,
                     fb_beta,
+                    da3_depth_root=da3_depth_root,
                 )
             print(f"[train] step {step:6d}  MOTION  {_fmt_motion_row(m)}", flush=True)
             motion_history.append(

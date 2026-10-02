@@ -1,0 +1,14 @@
+{
+  "pass": true,
+  "remote_release_id": 400840625,
+  "url": "https://github.com/yuki-inaho/vmamba3-3Dpointtracker/releases/tag/mamba3-preview-20261001-step200",
+  "new_assets": 8,
+  "unchanged_original_assets": 11,
+  "total_assets": 19,
+  "release_title_body_verified": true,
+  "download_all_sha256_verified": true,
+  "download_pt_weights_only_and_bitwise_source_verified": true,
+  "download_onnx_full_checker_and_provenance_verified": true,
+  "public_pt_sha256": "c022511872c2d59a39bc1c39a3c62f44c142ee8ff9ca7dc7859881a78ae490b7",
+  "public_onnx_sha256": "7b1530c38e01496e60f67ef1cd6b9eb2ebb250ec8108cb908d9c07217edef604"
+}

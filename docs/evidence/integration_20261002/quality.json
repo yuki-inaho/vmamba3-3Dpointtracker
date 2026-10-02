@@ -1,0 +1,55 @@
+{
+  "date": "2026-10-02",
+  "scope": "DA-off training fixes, comparison demo, GPU verifier, and documentation integration",
+  "success": true,
+  "unit_tests": {
+    "command": "uv run --locked --extra onnx pytest tests/unit -q",
+    "passed": 149,
+    "warnings": 26,
+    "elapsed_seconds": 12.42,
+    "warning_scope": "existing multiprocessing fork and NumPy scalar-conversion deprecations"
+  },
+  "ruff_check": {
+    "passed": true,
+    "files": [
+      "scripts/compare_release_tracking.py",
+      "scripts/demo_tracking_comparison.py",
+      "scripts/verify_refiner_gpu.py",
+      "scripts/train_depth_refined_tracker.py",
+      "src/mamba3_tracker/viz/comparison.py",
+      "src/mamba3_tracker/data/bucket_batch.py",
+      "src/mamba3_tracker/data/depth_source.py",
+      "src/mamba3_tracker/data/dataset.py",
+      "src/mamba3_tracker/data/fixed_da.py",
+      "tests/unit/test_tracking_comparison.py",
+      "tests/unit/test_tracking_demo_cli.py",
+      "tests/unit/test_depth_source.py",
+      "tests/unit/test_training_motion_depth.py",
+      "tests/unit/test_worker_loader_options.py",
+      "tests/unit/test_onnx_gpu_verification.py"
+    ]
+  },
+  "type_check": {
+    "incremental_project_gate": "uv run ty check",
+    "additional_gate": "uv run ty check scripts/verify_refiner_gpu.py tests/unit/test_onnx_gpu_verification.py",
+    "passed": true,
+    "whole_repository_typed": false
+  },
+  "format_check": {
+    "passed": true,
+    "checked_files": 12,
+    "excluded_legacy_files": [
+      "scripts/train_depth_refined_tracker.py",
+      "src/mamba3_tracker/data/dataset.py",
+      "src/mamba3_tracker/data/fixed_da.py"
+    ],
+    "note": "Four small changed files were formatted; large legacy files were not broadly reformatted. All 15 files passed lint."
+  },
+  "diff_check_passed": true,
+  "gpu_synthetic_cases_passed": 8,
+  "gpu_tf32": false,
+  "gpu_compute_profile_verified": true,
+  "full_official_minival_evaluated": false,
+  "fixed_nine_acceptance_evaluated": false,
+  "gpu_real_video_aj_evaluated": false
+}

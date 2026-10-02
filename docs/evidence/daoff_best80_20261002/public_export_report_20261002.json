@@ -1,0 +1,16 @@
+{
+  "success": true,
+  "file": "tracker_mamba3_daoff_best80.pt",
+  "step": 80,
+  "source_checkpoint_sha256": "85a507b6981aed89a63744befba5113628249277dcb24796c89e35adbda9c7c5",
+  "public_checkpoint_sha256": "c022511872c2d59a39bc1c39a3c62f44c142ee8ff9ca7dc7859881a78ae490b7",
+  "public_checkpoint_bytes": 32490639,
+  "tracker_tensors": 52,
+  "excluded_frozen_backbone_tensors": 211,
+  "all_tracker_weights_bitwise_equal": true,
+  "weights_only_load_passed": true,
+  "optimizer_rng_and_host_paths_excluded": true,
+  "portable_parameters": 8117988,
+  "source_unchanged": true,
+  "task_accuracy_verified": false
+}

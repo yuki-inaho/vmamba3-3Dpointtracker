@@ -1,0 +1,209 @@
+{
+  "date_utc": "2026-10-02",
+  "architecture": "v35 official Mamba-3 tracker",
+  "public_checkpoint": "tracker_mamba3_daoff_best80.pt",
+  "public_checkpoint_sha256": "c022511872c2d59a39bc1c39a3c62f44c142ee8ff9ca7dc7859881a78ae490b7",
+  "source_checkpoint_sha256": "85a507b6981aed89a63744befba5113628249277dcb24796c89e35adbda9c7c5",
+  "training": {
+    "train_clips": 1027,
+    "validation_clips": 15,
+    "raw_clips": 1042,
+    "raw_bytes": 99949386750,
+    "photometric_augmentation": false,
+    "window_frames": 8,
+    "fixed_training_window_seed": 42,
+    "image_size": 896,
+    "optimizer": "AMUSE",
+    "muon_lr": 0.002,
+    "aux_lr": 0.0001,
+    "warmup_steps": 100,
+    "batch_max": 32,
+    "trainable_parameters": 8117988,
+    "configured_max_steps": 800,
+    "configured_clip_budget": 20000,
+    "early_stop_patience": 5,
+    "early_stop_min_delta": 0.001,
+    "final_step": 130,
+    "processed_clips": 3950,
+    "stop_reason": "early_stopping",
+    "best_step": 80,
+    "resume_start_step": 10,
+    "resumed_updates": 120,
+    "warm_start_checkpoint_sha256": "bcddf045311b76a91bc772e35901acbdb99f397b752ee0ba4beacb3fb1ded5f4",
+    "unused_manifest_sha256": "1c4f6c02dd208767dd1b28037ee506000aaeb21872a5a38943d7c9cd62e2cc75",
+    "exclusion_rule": "all 663 prior seed42/fraction0.15 candidates and all 150 official minival clips"
+  },
+  "validation": {
+    "scope": "fixed monitoring heldout: 5 clips each from ADT, DriveTrack and PStudio; not official minival",
+    "window_frames": 8,
+    "dataset_rng_seed_each_validation": 12345,
+    "members": [
+      "pstudio/boxes_21.npz",
+      "pstudio/juggle_6.npz",
+      "pstudio/boxes_18.npz",
+      "pstudio/boxes_3.npz",
+      "pstudio/basketball_21.npz",
+      "drivetrack/tapvid3d_2739239662326039445_5890_320_5910_320_2_9c_GVNEfaFivtmm6v34DtQ.npz",
+      "drivetrack/tapvid3d_16608525782988721413_100_000_120_000_1_WM1bSCxbe-lfC2QsJyHNJg.npz",
+      "drivetrack/tapvid3d_1773696223367475365_1060_000_1080_000_1_CdvJMungycUAsKAycsjudQ.npz",
+      "drivetrack/tapvid3d_14964691552976940738_2219_229_2239_229_1_sAyn9ccaJYUUgWCNb5bvFg.npz",
+      "drivetrack/tapvid3d_5592790652933523081_667_770_687_770_2_-xisZa3_U7rg17b-_7SkVg.npz",
+      "adt/Apartment_release_multiuser_cook_seq143_0.npz",
+      "adt/Apartment_release_multiuser_cook_seq145_4.npz",
+      "adt/Apartment_release_meal_skeleton_seq135_8.npz",
+      "adt/Apartment_release_clean_seq141_1.npz",
+      "adt/Apartment_release_multiuser_party_seq135_10.npz"
+    ],
+    "initial_step0": {
+      "total": 0.18287038703759512,
+      "pos_3D": 0.20114524178206922,
+      "pos_2D": 0.0001217963089099309,
+      "vis": 0.0
+    },
+    "best_step80": {
+      "total": 0.1613510861992836,
+      "pos_3D": 0.17747104577720166,
+      "pos_2D": 0.0001514457927745146,
+      "vis": 0.0
+    },
+    "final_step130": {
+      "total": 0.16562598695357642,
+      "pos_3D": 0.1821751677741607,
+      "pos_2D": 0.0001341261983422252,
+      "vis": 0.0
+    },
+    "total_loss_relative_reduction_percent": 11.76751533526722,
+    "loss_definition": "visible-point depth-normalized L1 XYZ plus delta_uv squared regularization; no learned visibility loss",
+    "pos_2D_log_field_meaning": "delta_uv L2 regularizer, not 2D tracking error",
+    "history": [
+      {
+        "step": 0,
+        "total": 0.18287038703759512,
+        "pos_3D": 0.20114524178206922,
+        "pos_2D": 0.0001217963089099309,
+        "vis": 0.0
+      },
+      {
+        "step": 10,
+        "total": 0.18379727974534035,
+        "pos_3D": 0.20216517473260562,
+        "pos_2D": 0.00011823053561480872,
+        "vis": 0.0
+      },
+      {
+        "step": 20,
+        "total": 0.18215796972314516,
+        "pos_3D": 0.20036128895978134,
+        "pos_2D": 0.00012472483564730888,
+        "vis": 0.0
+      },
+      {
+        "step": 30,
+        "total": 0.18611221325894198,
+        "pos_3D": 0.20471056513488292,
+        "pos_2D": 0.00012863768279203214,
+        "vis": 0.0
+      },
+      {
+        "step": 40,
+        "total": 0.18439318463206292,
+        "pos_3D": 0.20281857798496883,
+        "pos_2D": 0.00013917674817397104,
+        "vis": 0.0
+      },
+      {
+        "step": 50,
+        "total": 0.17473205539087455,
+        "pos_3D": 0.1921920212606589,
+        "pos_2D": 0.00013230312530746838,
+        "vis": 0.0
+      },
+      {
+        "step": 60,
+        "total": 0.1752854975561301,
+        "pos_3D": 0.1928020693361759,
+        "pos_2D": 0.0001197108796380538,
+        "vis": 0.0
+      },
+      {
+        "step": 70,
+        "total": 0.16475154273211956,
+        "pos_3D": 0.1812127924213807,
+        "pos_2D": 0.00013897928098837535,
+        "vis": 0.0
+      },
+      {
+        "step": 80,
+        "total": 0.1613510861992836,
+        "pos_3D": 0.17747104577720166,
+        "pos_2D": 0.0001514457927745146,
+        "vis": 0.0
+      },
+      {
+        "step": 90,
+        "total": 0.16940132106343905,
+        "pos_3D": 0.1863251242786646,
+        "pos_2D": 0.00016321456132573076,
+        "vis": 0.0
+      },
+      {
+        "step": 100,
+        "total": 0.16972207960983118,
+        "pos_3D": 0.1866786738236745,
+        "pos_2D": 0.00015606197594024706,
+        "vis": 0.0
+      },
+      {
+        "step": 110,
+        "total": 0.17697560414671898,
+        "pos_3D": 0.19466052477558454,
+        "pos_2D": 0.00012633332141073577,
+        "vis": 0.0
+      },
+      {
+        "step": 120,
+        "total": 0.1791444145143032,
+        "pos_3D": 0.19704631765683492,
+        "pos_2D": 0.0001253319084450292,
+        "vis": 0.0
+      },
+      {
+        "step": 130,
+        "total": 0.16562598695357642,
+        "pos_3D": 0.1821751677741607,
+        "pos_2D": 0.0001341261983422252,
+        "vis": 0.0
+      }
+    ],
+    "comparable_to_old_release_validation": false,
+    "reason_not_comparable": "different train and heldout membership"
+  },
+  "motion_smoke": {
+    "scope": "first five PStudio clips only, at most 32 frames",
+    "reported_percent": 48.7,
+    "improvement_observed": false,
+    "official_tracking_accuracy": false
+  },
+  "runtime_checks": {
+    "all_checkpoint_model_and_optimizer_tensors_finite": true,
+    "resumed_steps_11_through_130_training_cache_misses": {
+      "dino": 0,
+      "flow": 0
+    },
+    "resumed_flow_oom_retries": 0,
+    "gpu_allocated_peak_mib": 24579.755859375,
+    "resumed_training_elapsed_seconds": 2128,
+    "root_unit_tests_passed": 132
+  },
+  "official_metrics": null,
+  "fixed9_reference_metrics": null,
+  "task_accuracy_verified": false,
+  "source_code_commit": "309c9347e494564ba6f5a92f9ab43aa89b882e99",
+  "frozen_dino_revision": "114c1379950215c8b35dfcd4e90a5c251dde0d32",
+  "source_local_training_fixes": [
+    "workspace depth stamp",
+    "configured motion depth root",
+    "spawn worker resize consistency"
+  ],
+  "inference_architecture_unchanged": true
+}

@@ -123,13 +123,15 @@ class DepthSource:
             # (verified, max|d uv| = 2.3e-13), so a da3l track set is a legitimate uv source for a
             # da3g run. Only a consumer that uses the artifact's z should refuse.
             if strict:
-                raise SystemExit(f"[depth_source] {msg} Use matching artifacts or regenerate.")
+                raise SystemExit(
+                    f"[depth_source] {msg} Use matching artifacts or regenerate."
+                )
             return f"MISMATCH {got} vs {self.name} -- ok if only uv is used"
         return f"verified {self.name}"
 
 
 def resolve(spec: str | Path | None, *, default: str | None = None) -> DepthSource:
-    """Accept a canonical name, an alias, or a path. Paths are identified against the registry."""
+    """Resolve registry names/paths or relocated roots with a matching source stamp."""
     if spec is None:
         if default is None:
             raise SystemExit(
@@ -148,10 +150,34 @@ def resolve(spec: str | Path | None, *, default: str | None = None) -> DepthSour
     for k, e in _REGISTRY.items():
         if p == e["root"].resolve():
             return DepthSource(k, e["root"], e["model"], e["note"])
+    stamp_path = p / "depth_source.json"
+    if stamp_path.exists():
+        try:
+            stamp = json.loads(stamp_path.read_text())
+            if not isinstance(stamp, dict):
+                raise ValueError("expected an object")
+            name, root = stamp.get("depth_source"), stamp.get("root")
+            if not isinstance(name, str) or name not in _REGISTRY:
+                raise ValueError("expected a canonical registered depth_source")
+            if (
+                not isinstance(root, str)
+                or not root
+                or Path(root).expanduser().resolve() != p
+            ):
+                raise ValueError("root does not match the requested directory")
+            e = _REGISTRY[name]
+            if stamp.get("model") != e["model"]:
+                raise ValueError("model does not match the registered source")
+        except (OSError, ValueError, TypeError) as exc:
+            raise SystemExit(
+                f"[depth_source] invalid relocation stamp {stamp_path}: {exc}"
+            ) from exc
+        return DepthSource(name, p, e["model"], e["note"])
     raise SystemExit(
         f"[depth_source] {spec!r} is not a known depth source. Known: {sorted(_REGISTRY)} "
         f"({', '.join(str(e['root']) for e in _REGISTRY.values())}). Add it to the registry in "
-        f"src/mamba3_tracker/data/depth_source.py rather than passing a bare path."
+        f"src/mamba3_tracker/data/depth_source.py, or provide a verified relocation "
+        f"depth_source.json stamp, rather than passing a bare path."
     )
 
 

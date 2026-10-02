@@ -1,10 +1,10 @@
 {
   "success": true,
-  "checkpoint_step": 200,
-  "checkpoint_sha256": "bcddf045311b76a91bc772e35901acbdb99f397b752ee0ba4beacb3fb1ded5f4",
-  "file": "tracker_mamba3_daoff_best200.onnx",
-  "onnx_bytes": 32669442,
-  "onnx_sha256": "cd9c4f84859589796fdb50e22ec6d736cb421d3e75f268ab16b58eeb08009043",
+  "checkpoint_step": 80,
+  "checkpoint_sha256": "c022511872c2d59a39bc1c39a3c62f44c142ee8ff9ca7dc7859881a78ae490b7",
+  "file": "tracker_mamba3_step80.onnx",
+  "onnx_bytes": 32669333,
+  "onnx_sha256": "7b1530c38e01496e60f67ef1cd6b9eb2ebb250ec8108cb908d9c07217edef604",
   "opset": 18,
   "node_count": 1547,
   "operator_domains": [
@@ -107,10 +107,10 @@
         32
       ],
       "max_abs_error": {
-        "xyz": 2.384185791015625e-07,
+        "xyz": 4.291534423828125e-06,
         "uv_refined": 0.0,
-        "vis_logits": 5.587935447692871e-08,
-        "delta_uv": 2.5756889954209328e-09
+        "vis_logits": 1.7508864402770996e-07,
+        "delta_uv": 2.0954757928848267e-08
       },
       "chunk_1_max_abs_error": {
         "xyz": 0.0,
@@ -129,10 +129,10 @@
         48
       ],
       "max_abs_error": {
-        "xyz": 2.384185791015625e-06,
+        "xyz": 3.0994415283203125e-06,
         "uv_refined": 0.0,
-        "vis_logits": 3.8743019104003906e-07,
-        "delta_uv": 2.60770320892334e-08
+        "vis_logits": 4.172325134277344e-07,
+        "delta_uv": 3.5390257835388184e-08
       },
       "chunk_1_max_abs_error": {
         "xyz": 0.0,
@@ -151,9 +151,9 @@
         32
       ],
       "max_abs_error": {
-        "xyz": 5.7220458984375e-06,
+        "xyz": 6.198883056640625e-06,
         "uv_refined": 0.0,
-        "vis_logits": 4.637986421585083e-07,
+        "vis_logits": 4.172325134277344e-07,
         "delta_uv": 3.3527612686157227e-08
       },
       "chunk_1_max_abs_error": {
@@ -173,10 +173,10 @@
         23
       ],
       "max_abs_error": {
-        "xyz": 3.814697265625e-06,
+        "xyz": 1.1444091796875e-05,
         "uv_refined": 0.0,
-        "vis_logits": 4.470348358154297e-07,
-        "delta_uv": 2.7939677238464355e-08
+        "vis_logits": 6.705522537231445e-07,
+        "delta_uv": 6.147456588223577e-08
       },
       "chunk_1_max_abs_error": {
         "xyz": 0.0,
@@ -187,7 +187,7 @@
       "all_outputs_finite": true
     }
   ],
-  "elapsed_s": 2.7484772899988457,
+  "elapsed_s": 2.646321608997823,
   "rtol": 0.0002,
   "atol": 5e-05,
   "task_accuracy_verified": false,

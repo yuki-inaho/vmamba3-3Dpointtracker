@@ -1,0 +1,95 @@
+{
+  "schema_version": 1,
+  "budget_units": "decimal bytes",
+  "source": {
+    "dataset": "ZhengGuangze/TAPVid-3D",
+    "revision": "1575ec135a22e924d1702cd15e76527bcb89cc6e",
+    "exclusions": "all 663 prior seed42/fraction0.15 candidates and all 150 official minival clips"
+  },
+  "download": {
+    "status": "complete",
+    "clip_count": 1042,
+    "counts_by_subset": {
+      "adt": 590,
+      "drivetrack": 362,
+      "pstudio": 90
+    },
+    "selected_bytes": 99949386750,
+    "raw_budget_bytes": 100000000000,
+    "remaining_bytes": 50613250,
+    "updated_utc": "2026-10-02T03:28:33Z"
+  },
+  "raw_integrity": {
+    "status": "pass",
+    "errors": [],
+    "rehash_performed": true,
+    "ledger_sha256": "be722dc03a60882cf8afc3db9751580c314263215d73e5455bb24af6882dcfba",
+    "manifest_sha256": "1c4f6c02dd208767dd1b28037ee506000aaeb21872a5a38943d7c9cd62e2cc75",
+    "minival_overlap": 0,
+    "prior_candidate_overlap": 0
+  },
+  "final_cache_observation": {
+    "status": "pass",
+    "observed_utc": "2026-10-02T06:07:36Z",
+    "budgets": {
+      "raw_cap_bytes": 100000000000,
+      "raw_observed_bytes": 99949386750,
+      "raw_headroom_bytes": 50613250,
+      "flow_cap_bytes": 160000000000,
+      "flow_observed_bytes": 122947058624,
+      "flow_headroom_bytes": 37052941376,
+      "dino_cap_bytes": 20000000000,
+      "dino_observed_bytes": 13052500853,
+      "dino_headroom_bytes": 6947499147,
+      "data_root_cap_bytes": 360000000000,
+      "data_root_observed_file_bytes": 319025090647,
+      "data_root_headroom_bytes": 40974909353
+    },
+    "depth": {
+      "npz_files": 1042,
+      "npz_bytes": 81211408573,
+      "ready_markers": 1042,
+      "ready_marker_bytes": 92817,
+      "partial_files": 0,
+      "status_sha256": "67210426f312935bdc0042256ee829735043977e39fcfbfe9bf6ea83ee4f5f65"
+    },
+    "flow": {
+      "namespace_sha256": "d6e17af69987e5925b5e44d38019232edf06785cc9fb6c8137176ea80abff099",
+      "fingerprint": "f41f0dab439d7116b4a84ec25992a0832773b0cbe430751a821d887569395d8a",
+      "files": 19136,
+      "bytes": 122947058624,
+      "partial_files": 0,
+      "variant_files_retained": 4718,
+      "original_completion_status_sha256": "180bb00150ae453e9caaf442419e4b96c75653511cc4d585e49c061089bd4b61",
+      "repair_status_sha256": "b5af30dce866f22f8e8bade6be8001199f7f1c81f5012206a4b46193a33bfcd7",
+      "repair_expected_keys": 14418,
+      "repair_expected_keys_present": 14418,
+      "repair_missing_before": 459,
+      "repair_regenerated": 459,
+      "repair_missing_after": 0,
+      "repair_invalid_strict_rereads": 0,
+      "directory_count_and_bytes_unchanged_since_repair": true
+    },
+    "dino": {
+      "namespace_sha256": "5a5f7acefff4d43a2ea1b3d2b0712010c71333ecf9b1ba1ec8c8dcd6ea2f751b",
+      "fingerprint": "8d57955799e933834846070bc2a5e528ca3be59beb8b7fa4b8a8c604504d2884",
+      "files": 10801,
+      "bytes": 13052500853,
+      "partial_files": 0,
+      "variant_files_retained": 2576,
+      "original_completion_status_sha256": "e431bf8adb9ed81a348e9453a5bf10c3afb2a14531f76768c2b25b8f67308a15",
+      "repair_status_sha256": "30cc2c675f577a3055851618428113f57e36deee3c30cc36307f401fa9231311",
+      "repair_expected_keys": 8225,
+      "repair_expected_keys_present": 8225,
+      "repair_missing_before": 0,
+      "repair_regenerated": 0,
+      "repair_missing_after": 0,
+      "repair_invalid_strict_rereads": 0,
+      "directory_count_and_bytes_unchanged_since_repair": true
+    },
+    "observation_method": "CPU-only file counts, byte sums, partial-file scan, and immutable manifest/status SHA-256 checks; raw content rehash was not repeated.",
+    "original_pass_snapshots_mutated": false
+  },
+  "historical_authentication_note": "final_audit.json retains the initial DINO blocked snapshot; postauth_cache_audit and the later strict repair reports confirm completion. No fallback encoder was used.",
+  "augmentation": "photometric augmentation disabled; DA3 depth remains enabled"
+}

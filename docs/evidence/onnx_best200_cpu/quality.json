@@ -66,7 +66,7 @@
     }
   ],
   "checkpoint_sha256": "bcddf045311b76a91bc772e35901acbdb99f397b752ee0ba4beacb3fb1ded5f4",
-  "host": "Linux-6.17.0-1022-azure-x86_64-with-glibc2.39",
+  "host": "Linux-7.0.0-28-generic-x86_64-with-glibc2.39",
   "root_lock_sha256": "259ade098c242f8b200cb907030ee76fa6bc9d85c91ffccc3b448647b02ae075",
   "versions": {
     "python": "3.12.3 (main, Aug 31 2026, 10:18:26) [GCC 13.3.0]",
@@ -74,9 +74,9 @@
     "numpy": "1.26.4",
     "onnx": "1.23.1",
     "onnxruntime": "1.30.0",
-    "cuda_available": false
+    "cuda_available": true
   },
-  "elapsed_s": 33.75648959399999,
+  "elapsed_s": 32.97779266099678,
   "onnx_sha256": "cd9c4f84859589796fdb50e22ec6d736cb421d3e75f268ab16b58eeb08009043",
   "lean_lock_sha256": "b6c90f0bed74978ecd577ba8de6f8de75a191c8d43f06fbdaca6ac11dee4944e",
   "checkpoint_unchanged": true,

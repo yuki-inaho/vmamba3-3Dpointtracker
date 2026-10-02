@@ -1,0 +1,225 @@
+{
+  "scope": "three preselected training-validation clips; not official minival and not an independent test set",
+  "official_full_minival_evaluated": false,
+  "audit_passed": true,
+  "equal_subset_mean": {
+    "old": {
+      "average_jaccard": 0.15347960410168318,
+      "average_pts_within_thresh": 0.2399392854054895,
+      "occlusion_accuracy": 0.8779691826615067,
+      "metric_average_jaccard": 0.3234053978677013,
+      "metric_average_pts_within_thresh": 0.43235754935055376,
+      "metric_err_mean_m": 0.8919559965531031,
+      "metric_err_median_m": 0.7371657316883405
+    },
+    "new": {
+      "average_jaccard": 0.16089172989070408,
+      "average_pts_within_thresh": 0.2489494481515768,
+      "occlusion_accuracy": 0.8779691826615067,
+      "metric_average_jaccard": 0.36192914182063846,
+      "metric_average_pts_within_thresh": 0.488007165971859,
+      "metric_err_mean_m": 0.9013641128937403,
+      "metric_err_median_m": 0.42285267760356265
+    },
+    "onnx": {
+      "average_jaccard": 0.16078769105991814,
+      "average_pts_within_thresh": 0.24874913364548548,
+      "occlusion_accuracy": 0.8779691826615067,
+      "metric_average_jaccard": 0.36195172377642093,
+      "metric_average_pts_within_thresh": 0.4880247793095986,
+      "metric_err_mean_m": 0.9012766927480698,
+      "metric_err_median_m": 0.42258666083216667
+    }
+  },
+  "clips": [
+    {
+      "subset": "pstudio",
+      "clip_id": "boxes_21",
+      "frames": 150,
+      "tracks": 460,
+      "scores": {
+        "old": {
+          "average_jaccard": 0.23775394814803494,
+          "average_pts_within_thresh": 0.32831486310299873,
+          "occlusion_accuracy": 0.9117971014492754,
+          "metric_average_jaccard": 0.5193346313862931,
+          "metric_average_pts_within_thresh": 0.5969719687092568,
+          "metric_err_mean_m": 0.13371427357196808,
+          "metric_err_median_m": 0.0806543380022049
+        },
+        "new": {
+          "average_jaccard": 0.23088492276757813,
+          "average_pts_within_thresh": 0.32290091264667536,
+          "occlusion_accuracy": 0.9117971014492754,
+          "metric_average_jaccard": 0.5726975975223485,
+          "metric_average_pts_within_thresh": 0.6723435462842242,
+          "metric_err_mean_m": 0.09616860747337341,
+          "metric_err_median_m": 0.04410168528556824
+        },
+        "onnx": {
+          "average_jaccard": 0.2307677080233228,
+          "average_pts_within_thresh": 0.32271512385919165,
+          "occlusion_accuracy": 0.9117971014492754,
+          "metric_average_jaccard": 0.5727463375074964,
+          "metric_average_pts_within_thresh": 0.6724087353324641,
+          "metric_err_mean_m": 0.09618839621543884,
+          "metric_err_median_m": 0.04408574476838112
+        }
+      },
+      "native_onnx_difference": {
+        "xyz": {
+          "count": 61360,
+          "mean": 0.00028429151251237205,
+          "p50": 0.00019771691268429046,
+          "p95": 0.0007107433668426161,
+          "max": 0.009184229830131719,
+          "max_abs_component_all": 0.0108184814453125
+        },
+        "uv896": {
+          "count": 61360,
+          "mean": 0.000033379417914796756,
+          "p50": 0.000030517578125,
+          "p95": 0.00006823937919616058,
+          "max": 0.00042724609375,
+          "max_abs_component_all": 0.00042724609375
+        }
+      }
+    },
+    {
+      "subset": "drivetrack",
+      "clip_id": "tapvid3d_2739239662326039445_5890_320_5910_320_2_9c_GVNEfaFivtmm6v34DtQ",
+      "frames": 31,
+      "tracks": 256,
+      "scores": {
+        "old": {
+          "average_jaccard": 0.04717953543494448,
+          "average_pts_within_thresh": 0.08630208333333333,
+          "occlusion_accuracy": 0.9421622983870968,
+          "metric_average_jaccard": 0.11106301519207828,
+          "metric_average_pts_within_thresh": 0.160625,
+          "metric_err_mean_m": 2.318681240081787,
+          "metric_err_median_m": 2.0094456672668457
+        },
+        "new": {
+          "average_jaccard": 0.029449035956579356,
+          "average_pts_within_thresh": 0.05481770833333334,
+          "occlusion_accuracy": 0.9421622983870968,
+          "metric_average_jaccard": 0.1542840355995745,
+          "metric_average_pts_within_thresh": 0.2182291666666667,
+          "metric_err_mean_m": 2.410085439682007,
+          "metric_err_median_m": 1.130380392074585
+        },
+        "onnx": {
+          "average_jaccard": 0.029279798561007063,
+          "average_pts_within_thresh": 0.05447916666666667,
+          "occlusion_accuracy": 0.9421622983870968,
+          "metric_average_jaccard": 0.15435850668030243,
+          "metric_average_pts_within_thresh": 0.21833333333333335,
+          "metric_err_mean_m": 2.4097514152526855,
+          "metric_err_median_m": 1.1295065879821777
+        }
+      },
+      "native_onnx_difference": {
+        "xyz": {
+          "count": 7680,
+          "mean": 0.005286461740520954,
+          "p50": 0.0035874706709536812,
+          "p95": 0.015293408655822991,
+          "max": 0.11055789499366166,
+          "max_abs_component_all": 0.10237503051757812
+        },
+        "uv896": {
+          "count": 7680,
+          "mean": 0.0000389017820404072,
+          "p50": 0.000030517578125,
+          "p95": 0.00008631674575031098,
+          "max": 0.00028790225622731333,
+          "max_abs_component_all": 0.000244140625
+        }
+      }
+    },
+    {
+      "subset": "adt",
+      "clip_id": "Apartment_release_multiuser_cook_seq143_0",
+      "frames": 300,
+      "tracks": 900,
+      "scores": {
+        "old": {
+          "average_jaccard": 0.17550532872207011,
+          "average_pts_within_thresh": 0.3052009097801365,
+          "occlusion_accuracy": 0.7799481481481482,
+          "metric_average_jaccard": 0.33981854702473246,
+          "metric_average_pts_within_thresh": 0.5394756793424045,
+          "metric_err_mean_m": 0.2234724760055542,
+          "metric_err_median_m": 0.12139718979597092
+        },
+        "new": {
+          "average_jaccard": 0.22234123094795474,
+          "average_pts_within_thresh": 0.36912972347472167,
+          "occlusion_accuracy": 0.7799481481481482,
+          "metric_average_jaccard": 0.3588057923399924,
+          "metric_average_pts_within_thresh": 0.5734487849646862,
+          "metric_err_mean_m": 0.19783829152584076,
+          "metric_err_median_m": 0.09407595545053482
+        },
+        "onnx": {
+          "average_jaccard": 0.22231556659542456,
+          "average_pts_within_thresh": 0.36905311041059813,
+          "occlusion_accuracy": 0.7799481481481482,
+          "metric_average_jaccard": 0.35875032714146393,
+          "metric_average_pts_within_thresh": 0.5733322692629983,
+          "metric_err_mean_m": 0.1978902667760849,
+          "metric_err_median_m": 0.09416764974594116
+        }
+      },
+      "native_onnx_difference": {
+        "xyz": {
+          "count": 125305,
+          "mean": 0.0006270254120048898,
+          "p50": 0.0003297292187454176,
+          "p95": 0.00201837301027761,
+          "max": 0.03336944193500024,
+          "max_abs_component_all": 0.038125038146972656
+        },
+        "uv896": {
+          "count": 125305,
+          "mean": 0.00005001416217345665,
+          "p50": 0.00005501634636633284,
+          "p95": 0.0001220703125,
+          "max": 0.0009556254454917943,
+          "max_abs_component_all": 0.00095367431640625
+        }
+      }
+    }
+  ],
+  "media": [
+    {
+      "filename": "comparison_pstudio.mp4",
+      "expected_frames": 150,
+      "full_decode": "passed",
+      "sha256": "6a1a7063f0f0e3a7c2e4ff09d49eb97351ebe84d8bbef918fa647bc01ad01017",
+      "bytes": 5248025
+    },
+    {
+      "filename": "comparison_drivetrack.mp4",
+      "expected_frames": 31,
+      "full_decode": "passed",
+      "sha256": "920ef234655e496ba1087df3885f106fcb1b226a48e2a82da16bbbd498af8172",
+      "bytes": 2831675
+    },
+    {
+      "filename": "comparison_adt.mp4",
+      "expected_frames": 300,
+      "full_decode": "passed",
+      "sha256": "87e67295992e3d8382b06131dc6f13fac2dfda90b36dc5812af984cae92ec721",
+      "bytes": 9213950
+    },
+    {
+      "filename": "comparison_all.mp4",
+      "expected_frames": 481,
+      "full_decode": "passed",
+      "sha256": "e4084df183638f0e085369db126bf8760fba21aec8524ec5d98e0de745f2f9f8",
+      "bytes": 17292106
+    }
+  ]
+}

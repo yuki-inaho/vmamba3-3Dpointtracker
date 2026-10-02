@@ -286,3 +286,28 @@ PyTorch-free CPU inference environment, and a C++ ONNX Runtime runner. See
 This is a **refiner-only** deployment: DINO features, optical-flow tracks and
 metric depth remain external inputs. Native CUDA/BF16 accuracy on the fixed nine
 clips is still **unverified**, not implied by the CPU portability tests.
+
+The recommended preview checkpoint is now **best80**. See the
+[training, Release, cache and comparison record](docs/session_memory_20261002.md)
+and the [documentation index](docs/README.md).
+
+### ONNX conversion and GPU Runtime verification
+
+The [ONNX conversion design](docs/onnx_export_design_20261002.md) explains how the
+Mamba-3 Triton SISO computation was expanded into standard FP32 ONNX operators,
+with unchanged tracker weights. The portable graph uses quadratic frame memory
+and keeps DINO, flow and depth as external inputs.
+
+**onnxruntime-gpu 1.30.0 was tested** on an RTX 5090 with CUDA 13 / cuDNN 9 for
+both best200 and best80: four dynamic synthetic cases per model passed against
+portable FP32 and CPU ORT at `rtol=2e-4, atol=5e-5`, including track chunking.
+CUDA execution was verified from profiling with TF32 disabled. CPU nodes were
+limited to integer shape processing; this is not a claim that every graph node
+runs on GPU. See the [best200 GPU report](docs/evidence/onnx_gpu_20261002/best200_gpu_report.json)
+and [best80 GPU report](docs/evidence/onnx_gpu_20261002/best80_gpu_report.json).
+The root environment and deployment CLI remain CPU-ORT based; the GPU checker
+uses an isolated environment documented in the design note.
+
+GPU-ORT real-video AJ and speed, the fixed-nine acceptance gate, and full
+150-clip official minival are still **unverified**. The three-video demo compares
+native CUDA/BF16 with **CPU** ONNX, not GPU ONNX.

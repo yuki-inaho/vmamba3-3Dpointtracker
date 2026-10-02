@@ -1,7 +1,6 @@
 {
   "ready": false,
   "blockers": [
-    "CUDA unavailable: the unchanged native Triton/BF16 path requires CUDA",
     "Missing native dependency: third_party/WAFT/model.py",
     "Missing native dependency: third_party/WAFT/ckpts/waft_a1_recommended.pth",
     "Missing data: adt/Lite_release_recognition_GreenDecorationTall_seq031_6.npz",

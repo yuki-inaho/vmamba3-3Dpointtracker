@@ -5,7 +5,7 @@ All checks passed!
 =============================== warnings summary ===============================
 tests/unit/test_fixed_da.py::test_prewarm_matches_worker_resize_pixels_and_keys
 tests/unit/test_fixed_da.py::test_prewarm_matches_worker_resize_pixels_and_keys
-  /usr/lib/python3.12/multiprocessing/popen_fork.py:66: DeprecationWarning: This process (pid=2411) is multi-threaded, use of fork() may lead to deadlocks in the child.
+  /usr/lib/python3.12/multiprocessing/popen_fork.py:66: DeprecationWarning: This process (pid=21857) is multi-threaded, use of fork() may lead to deadlocks in the child.
     self.pid = os.fork()
 
 tests/unit/test_onnx_refiner_metrics.py::test_score_contains_absolute_metric_aj
@@ -42,7 +42,7 @@ tests/unit/test_onnx_refiner_metrics.py::test_paired_visibility_uses_same_flow_m
     "occlusion_accuracy": float(m["occlusion_accuracy"]),
 
 -- Docs: https://docs.pytest.org/en/stable/how-to/capture-warnings.html
-108 passed, 26 warnings in 6.98s
+108 passed, 26 warnings in 3.91s
 
 [stderr]
 Resolved 167 packages in 1ms
