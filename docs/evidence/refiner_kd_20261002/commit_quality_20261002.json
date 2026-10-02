@@ -1,0 +1,15 @@
+{
+  "recorded_at": "2026-10-02 22:50:13 JST+0900",
+  "scope": "KD code/config/docs/existing tests and promoted public reproduction helpers; pre-commit checks, not final task-accuracy acceptance",
+  "unit_tests": {"command": "uv run --no-sync pytest tests/unit -q", "passed": 395, "warnings": 31, "seconds": 18.79},
+  "ty": {"command": "uv run --no-sync ty check", "success": true},
+  "ruff": {"scope": "changed KD Python files and eight promoted helpers (one shell helper checked separately)", "success": true},
+  "shell_syntax": {"path": "scripts/run_kd_additional_r2.sh", "success": true},
+  "promoted_python_syntax_and_evidence_json": {"python_files_checked": 9, "json_files_checked": 7, "success": true},
+  "training_checkpoint_source_hashes_unchanged": true,
+  "secret_pattern_scan": {"scope": "public candidate tree, excluding Git/venv/temp/result/weights/third_party/lockfile; values not printed", "matching_files": 0},
+  "excluded": ["authentication/private environment files", "gated frontend weights", "raw data and caches", "model and ONNX binaries distributed through Release", "Desktop comparison video binaries"],
+  "new_demo_tests_created": false,
+  "additional_research_and_training_started": false,
+  "remaining_accuracy_issues": "docs/diary/2026-10-02_refiner_kd_remaining_issues.md"
+}

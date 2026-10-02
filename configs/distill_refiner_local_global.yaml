@@ -1,0 +1,59 @@
+schema_version: 2
+architecture: vssd_local_global_128x2_v2_train
+teacher:
+  checkpoint: weights/mamba3-preview-20261002-best80/tracker_mamba3_daoff_best80.pt
+  sha256: c022511872c2d59a39bc1c39a3c62f44c142ee8ff9ca7dc7859881a78ae490b7
+  execution: native_bf16_mixer_fp32_geometry
+  run_config: /workspace/vmamba3_data/result/v64_daoff_unused100gb_train_20261002/cfg.json
+data:
+  split: /workspace/vmamba3_data/result/v64_daoff_unused100gb_train_20261002/growing_pool.json
+  split_sha256: 1557b93e38cfd64825a67de8436b1e4322d37ad83c0422b149d9403ec2d0e5d5
+  minival_root: /workspace/vmamba3_eval/raw
+  photometric_augment: false
+  image_size: 896
+  dino_image_size: 448
+  dino_revision: 114c1379950215c8b35dfcd4e90a5c251dde0d32
+  fixed_window_seed: 42
+  window: 16
+  num_tracks: 256
+  label_mode: online
+  z_ref: full_microbatch_lower_median_plus_1e-6
+  input_cache_root: result/refiner_kd_improved_20261002/inputs
+  input_cache_max_bytes: 150000000000
+optimizer:
+  name: AdamW
+  lr: 0.0003
+  weight_decay: 0.01
+  grad_clip: 1.0
+training:
+  effective_batch: 32
+  microbatch_candidates: [1, 4, 8, 16, 32]
+  seeds: [42, 43, 44]
+  smoke_steps: 20
+  overfit_steps: 32
+  pilot_steps: 200
+  full_steps: 800
+  processed_clip_limit: 20000
+  warmup_steps: 100
+  monitor_every: 10
+  patience: 5
+  min_delta: 0.001
+  long_steps: 200
+  long_lr: 0.00009
+ablations:
+  A0: []
+  A1: [residual, xyz]
+  A2: [residual, xyz, feature]
+  A3: [residual, xyz, feature, temporal]
+  A4: [residual, xyz, feature, temporal, aux]
+improvement:
+  query_policy: strict_visible_gt_reanchor_v1
+  frontend_precision: fp32
+  block_steps: 100
+  block_lr: 0.0003
+  kd_gate: teacher_better
+  gradient_target_ratio: 0.1
+  gradient_max_scale: 100
+  gradient_direction_gate: true
+protocol: result/refiner_kd_20261002/protocol.json
+protocol_sha256: e83a01247263c84c27273427578b8c8093b48c6a6de42b514dbe12d949941054

@@ -1,0 +1,221 @@
+{
+  "scope": "short-window monitor only; final acceptance incomplete",
+  "teacher_sha256": "c022511872c2d59a39bc1c39a3c62f44c142ee8ff9ca7dc7859881a78ae490b7",
+  "runs": {
+    "full_s42": {
+      "step": 240,
+      "processed_clips": 7680,
+      "best_monitor_gt_loss": 0.1156595416367054,
+      "exit_reason": "early_stop",
+      "teacher_unchanged": true,
+      "peak_vram_bytes": 5483915776,
+      "training_status_sha256": "82dbf0f8c174b688ebefcb763a90cb88fabc2f1c4dc6fec0f8a07bad85def573",
+      "monitor": {
+        "teacher": {
+          "per_subset": {
+            "adt": {
+              "average_jaccard": 0.15647699246986316,
+              "metric_average_jaccard": 0.29219185802581793
+            },
+            "drivetrack": {
+              "average_jaccard": 0.1355318985022756,
+              "metric_average_jaccard": 0.1518294120658919
+            },
+            "pstudio": {
+              "average_jaccard": 0.15497088602400488,
+              "metric_average_jaccard": 0.36037736091205397
+            }
+          },
+          "macro": {
+            "average_jaccard": 0.14899325899871455,
+            "metric_average_jaccard": 0.2681328770012546
+          }
+        },
+        "student": {
+          "per_subset": {
+            "adt": {
+              "average_jaccard": 0.0979393744716479,
+              "metric_average_jaccard": 0.24814704036859397
+            },
+            "drivetrack": {
+              "average_jaccard": 0.11787679114615568,
+              "metric_average_jaccard": 0.1084908105433982
+            },
+            "pstudio": {
+              "average_jaccard": 0.0913618460793707,
+              "metric_average_jaccard": 0.31306223274685757
+            }
+          },
+          "macro": {
+            "average_jaccard": 0.10239267056572476,
+            "metric_average_jaccard": 0.2232333612196166
+          }
+        }
+      },
+      "monitor_report_sha256": "fa56a79bcc6927e93122a66fd8b62a662e60081fddefd4b89c46a6d1949e1e42"
+    },
+    "full_s43": {
+      "step": 270,
+      "processed_clips": 8640,
+      "best_monitor_gt_loss": 0.1147727948303024,
+      "exit_reason": "early_stop",
+      "teacher_unchanged": true,
+      "peak_vram_bytes": 5483915776,
+      "training_status_sha256": "6f0a63502a50ce5373ee97110d2bbc8ddd42fce202feb2e1f05fc9a9c391297a",
+      "monitor": {
+        "teacher": {
+          "per_subset": {
+            "adt": {
+              "average_jaccard": 0.15647699246986316,
+              "metric_average_jaccard": 0.29219185802581793
+            },
+            "drivetrack": {
+              "average_jaccard": 0.1355318985022756,
+              "metric_average_jaccard": 0.1518294120658919
+            },
+            "pstudio": {
+              "average_jaccard": 0.15497088602400488,
+              "metric_average_jaccard": 0.36037736091205397
+            }
+          },
+          "macro": {
+            "average_jaccard": 0.14899325899871455,
+            "metric_average_jaccard": 0.2681328770012546
+          }
+        },
+        "student": {
+          "per_subset": {
+            "adt": {
+              "average_jaccard": 0.11179537757766937,
+              "metric_average_jaccard": 0.2659304952884686
+            },
+            "drivetrack": {
+              "average_jaccard": 0.11418954420785796,
+              "metric_average_jaccard": 0.114934202413928
+            },
+            "pstudio": {
+              "average_jaccard": 0.09153318668578694,
+              "metric_average_jaccard": 0.3503198317165473
+            }
+          },
+          "macro": {
+            "average_jaccard": 0.10583936949043808,
+            "metric_average_jaccard": 0.24372817647298128
+          }
+        }
+      },
+      "monitor_report_sha256": "8cdfcd3c897fc37fe9455ae9a75f34953eaff335861ff7d9fa3f7b4ee7d3bb91"
+    },
+    "full_s44": {
+      "step": 270,
+      "processed_clips": 8640,
+      "best_monitor_gt_loss": 0.10973306236167749,
+      "exit_reason": "early_stop",
+      "teacher_unchanged": true,
+      "peak_vram_bytes": 5483915776,
+      "training_status_sha256": "94540bceeb21e6a4afa09721fd2e099d64189d6ec2ad449057637bc4e87c0824",
+      "monitor": {
+        "teacher": {
+          "per_subset": {
+            "adt": {
+              "average_jaccard": 0.15647699246986316,
+              "metric_average_jaccard": 0.29219185802581793
+            },
+            "drivetrack": {
+              "average_jaccard": 0.1355318985022756,
+              "metric_average_jaccard": 0.1518294120658919
+            },
+            "pstudio": {
+              "average_jaccard": 0.15497088602400488,
+              "metric_average_jaccard": 0.36037736091205397
+            }
+          },
+          "macro": {
+            "average_jaccard": 0.14899325899871455,
+            "metric_average_jaccard": 0.2681328770012546
+          }
+        },
+        "student": {
+          "per_subset": {
+            "adt": {
+              "average_jaccard": 0.08888308784511814,
+              "metric_average_jaccard": 0.2535329269225369
+            },
+            "drivetrack": {
+              "average_jaccard": 0.11893770284244214,
+              "metric_average_jaccard": 0.12350029497308763
+            },
+            "pstudio": {
+              "average_jaccard": 0.11130691087721305,
+              "metric_average_jaccard": 0.3464588143781856
+            }
+          },
+          "macro": {
+            "average_jaccard": 0.10637590052159111,
+            "metric_average_jaccard": 0.24116401209127006
+          }
+        }
+      },
+      "monitor_report_sha256": "757eb7bd0838103d943de57d9e79f8c0f378b96398502477028a0e195015662d"
+    },
+    "full_control_s42": {
+      "step": 300,
+      "processed_clips": 9600,
+      "best_monitor_gt_loss": 0.11384884119033814,
+      "exit_reason": "early_stop",
+      "teacher_unchanged": true,
+      "peak_vram_bytes": 5483915776,
+      "training_status_sha256": "de69ee77ad22cafbb7e415e818c53de8750b0cf113f9ec75f6f03fc392eadb85",
+      "monitor": {
+        "teacher": {
+          "per_subset": {
+            "adt": {
+              "average_jaccard": 0.15647699246986316,
+              "metric_average_jaccard": 0.29219185802581793
+            },
+            "drivetrack": {
+              "average_jaccard": 0.1355318985022756,
+              "metric_average_jaccard": 0.1518294120658919
+            },
+            "pstudio": {
+              "average_jaccard": 0.15497088602400488,
+              "metric_average_jaccard": 0.36037736091205397
+            }
+          },
+          "macro": {
+            "average_jaccard": 0.14899325899871455,
+            "metric_average_jaccard": 0.2681328770012546
+          }
+        },
+        "student": {
+          "per_subset": {
+            "adt": {
+              "average_jaccard": 0.08293496251882326,
+              "metric_average_jaccard": 0.2399591111435749
+            },
+            "drivetrack": {
+              "average_jaccard": 0.10889618742115992,
+              "metric_average_jaccard": 0.09771769649239334
+            },
+            "pstudio": {
+              "average_jaccard": 0.11139904058690323,
+              "metric_average_jaccard": 0.3455087712085881
+            }
+          },
+          "macro": {
+            "average_jaccard": 0.10107673017562879,
+            "metric_average_jaccard": 0.22772852628151877
+          }
+        }
+      },
+      "monitor_report_sha256": "8e7b2b5ea48084e1ee4957d99a486e317d4c0025d36b97ee00fe2702c1ac28b4"
+    }
+  },
+  "short_export": {
+    "parameters": 620502,
+    "onnx_bytes": 2546239,
+    "pt_bytes": 2509593,
+    "success": true,
+    "report_sha256": "09e58fb3f5135abb0e2720dad9c59efb7222a2980c67b3cc04a9bc97ff584ce6"
+  }
+}

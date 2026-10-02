@@ -1,0 +1,1005 @@
+{
+  "scope": "three preselected training-validation clips; not official minival and not an independent test set",
+  "clips": [
+    {
+      "status": "complete",
+      "scope": "three preselected training-validation clips; not official minival and not an independent test set",
+      "subset": "pstudio",
+      "clip_id": "boxes_21",
+      "frames": 150,
+      "tracks": 460,
+      "scores": {
+        "old": {
+          "average_jaccard": 0.23775394814803494,
+          "average_pts_within_thresh": 0.32831486310299873,
+          "occlusion_accuracy": 0.9117971014492754,
+          "metric_average_jaccard": 0.5193346313862931,
+          "metric_average_pts_within_thresh": 0.5969719687092568,
+          "metric_err_mean_m": 0.13371427357196808,
+          "metric_err_median_m": 0.0806543380022049
+        },
+        "new": {
+          "average_jaccard": 0.23088492276757813,
+          "average_pts_within_thresh": 0.32290091264667536,
+          "occlusion_accuracy": 0.9117971014492754,
+          "metric_average_jaccard": 0.5726975975223485,
+          "metric_average_pts_within_thresh": 0.6723435462842242,
+          "metric_err_mean_m": 0.09616860747337341,
+          "metric_err_median_m": 0.04410168528556824
+        },
+        "onnx": {
+          "average_jaccard": 0.2307677080233228,
+          "average_pts_within_thresh": 0.32271512385919165,
+          "occlusion_accuracy": 0.9117971014492754,
+          "metric_average_jaccard": 0.5727463375074964,
+          "metric_average_pts_within_thresh": 0.6724087353324641,
+          "metric_err_mean_m": 0.09618839621543884,
+          "metric_err_median_m": 0.04408574476838112
+        },
+        "student": {
+          "average_jaccard": 0.23180456490445636,
+          "average_pts_within_thresh": 0.3245567144719687,
+          "occlusion_accuracy": 0.9117971014492754,
+          "metric_average_jaccard": 0.21467138501652389,
+          "metric_average_pts_within_thresh": 0.2648076923076923,
+          "metric_err_mean_m": 0.7337639331817627,
+          "metric_err_median_m": 0.674043595790863
+        }
+      },
+      "native_onnx_difference": {
+        "xyz": {
+          "count": 61360,
+          "mean": 0.00028429151251237205,
+          "p50": 0.00019771691268429046,
+          "p95": 0.0007107433668426161,
+          "max": 0.009184229830131719,
+          "max_abs_component_all": 0.0108184814453125
+        },
+        "uv896": {
+          "count": 61360,
+          "mean": 3.3379417914796756e-05,
+          "p50": 3.0517578125e-05,
+          "p95": 6.823937919616058e-05,
+          "max": 0.00042724609375,
+          "max_abs_component_all": 0.00042724609375
+        }
+      },
+      "shared_frontend_inputs": {
+        "ray": {
+          "shape": [
+            1,
+            150,
+            460,
+            2
+          ],
+          "dtype": "float32",
+          "sha256": "17a8d01499cb59f035da0b779a48027f8fc132062da3ee1c037e88d158de20f7"
+        },
+        "z_raw": {
+          "shape": [
+            1,
+            150,
+            460
+          ],
+          "dtype": "float32",
+          "sha256": "bfe393475d413491b4d54a84f2c7385cf08800cada93c2527f9b7eab5e38c810"
+        },
+        "flow_visibility": {
+          "shape": [
+            1,
+            150,
+            460
+          ],
+          "dtype": "float32",
+          "sha256": "5a812092e81858c1ee165a8f3dc3dca90dcc26d862b4558169cf082ad117abb8"
+        },
+        "uv": {
+          "shape": [
+            1,
+            150,
+            460,
+            2
+          ],
+          "dtype": "float32",
+          "sha256": "122f7a2707555fcfaa236050149952bc7c219ac6f1bb85f58cee3dc5fd105152"
+        },
+        "depth": {
+          "shape": [
+            1,
+            150,
+            280,
+            504
+          ],
+          "dtype": "float32",
+          "sha256": "6bf7d074acfb5dc0af440b962546d455ae07c1d97e12e4e16c605d5543f453b3"
+        },
+        "images": {
+          "shape": [
+            1,
+            150,
+            3,
+            896,
+            896
+          ],
+          "dtype": "float32",
+          "sha256": "393978598a7dbf64b17c40bbd70a1f98ce194b1a5b3863d8b445926a02f8230f"
+        },
+        "K": {
+          "shape": [
+            1,
+            3,
+            3
+          ],
+          "dtype": "float32",
+          "sha256": "5f6499f537d80845fd123ede4309e4ce788a863aab37489fcd8bd96566669bf9"
+        },
+        "dino": {
+          "shape": [
+            1,
+            150,
+            384,
+            28,
+            28
+          ],
+          "dtype": "float32",
+          "sha256": "8b84ff769f88c80adc44bb008df4df2a47d51311b41746cefdfd38075d192b23"
+        }
+      },
+      "dino_extractions": 1,
+      "visibility_source": "same binary WAFT forward-backward mask for all methods",
+      "precision": {
+        "native": "CUDA BF16 Mamba-3 mixer, other operations FP32",
+        "onnx": "CPU FP32 refiner",
+        "student": "CUDA FP32 lightweight refiner"
+      },
+      "official_full_minival_evaluated": false,
+      "depth_model": "DA3 metric-large",
+      "weight_loading": {
+        "ignored_training_only_config_fields": [
+          "pretrained_mamba3"
+        ],
+        "old": {
+          "loaded_tensors": 52,
+          "missing_frozen_backbone_tensors": 211,
+          "all_supplied_weights_bitwise_equal": true,
+          "public_export": true
+        },
+        "new": {
+          "loaded_tensors": 52,
+          "missing_frozen_backbone_tensors": 211,
+          "all_supplied_weights_bitwise_equal": true,
+          "public_export": true
+        },
+        "shared_dino_fingerprint": "8d57955799e933834846070bc2a5e528ca3be59beb8b7fa4b8a8c604504d2884",
+        "onnx_metadata_verified": true,
+        "student": {
+          "architecture": "vssd_local_global_128x2_v2_train",
+          "parameters": 617374,
+          "checkpoint_sha256": "16ec743e3a46c00a7bffd77db83862a8037a09fbc8ecc52e586d3c1d60761ada"
+        }
+      },
+      "flow_config": {
+        "cfg": "third_party/SEA-RAFT/config/eval/spring-M.json",
+        "fb_alpha": 0.05,
+        "fb_beta": 1.0,
+        "iters": 4,
+        "scale": -1,
+        "source": "waft_live",
+        "url": "MemorySlices/Tartan-C-T-TSKH-spring540x960-M"
+      },
+      "waft_checkpoint_sha256": "9f4b24f48b3937eca690a12b73bc3190effde6d4d4c87db01998fe63d846397f",
+      "manifest_sha256": "19f2f796359a9bf9487ac1e6f17925630fd24d773eb5544064f4ae0dea3f1f72",
+      "prediction_sha256": "64c2fafc0d637897f6fb8126d17db87995508a7223925a8eeb079c9a873bac48",
+      "old_sha256": "bcddf045311b76a91bc772e35901acbdb99f397b752ee0ba4beacb3fb1ded5f4",
+      "new_sha256": "c022511872c2d59a39bc1c39a3c62f44c142ee8ff9ca7dc7859881a78ae490b7",
+      "onnx_sha256": "7b1530c38e01496e60f67ef1cd6b9eb2ebb250ec8108cb908d9c07217edef604",
+      "elapsed_s": 63.31007275400043,
+      "torch": "2.12.1+cu130",
+      "gpu": "NVIDIA GeForce RTX 5090",
+      "gpu_peak_allocated_mib": 3387.13623046875,
+      "student_sha256": "16ec743e3a46c00a7bffd77db83862a8037a09fbc8ecc52e586d3c1d60761ada"
+    },
+    {
+      "status": "complete",
+      "scope": "three preselected training-validation clips; not official minival and not an independent test set",
+      "subset": "drivetrack",
+      "clip_id": "tapvid3d_2739239662326039445_5890_320_5910_320_2_9c_GVNEfaFivtmm6v34DtQ",
+      "frames": 31,
+      "tracks": 256,
+      "scores": {
+        "old": {
+          "average_jaccard": 0.04717953543494448,
+          "average_pts_within_thresh": 0.08630208333333333,
+          "occlusion_accuracy": 0.9421622983870968,
+          "metric_average_jaccard": 0.11106301519207828,
+          "metric_average_pts_within_thresh": 0.160625,
+          "metric_err_mean_m": 2.318681240081787,
+          "metric_err_median_m": 2.0094456672668457
+        },
+        "new": {
+          "average_jaccard": 0.029449035956579356,
+          "average_pts_within_thresh": 0.05481770833333334,
+          "occlusion_accuracy": 0.9421622983870968,
+          "metric_average_jaccard": 0.1542840355995745,
+          "metric_average_pts_within_thresh": 0.2182291666666667,
+          "metric_err_mean_m": 2.410085439682007,
+          "metric_err_median_m": 1.130380392074585
+        },
+        "onnx": {
+          "average_jaccard": 0.029279798561007063,
+          "average_pts_within_thresh": 0.05447916666666667,
+          "occlusion_accuracy": 0.9421622983870968,
+          "metric_average_jaccard": 0.15435850668030243,
+          "metric_average_pts_within_thresh": 0.21833333333333335,
+          "metric_err_mean_m": 2.4097514152526855,
+          "metric_err_median_m": 1.1295065879821777
+        },
+        "student": {
+          "average_jaccard": 0.02630244263963146,
+          "average_pts_within_thresh": 0.049453125,
+          "occlusion_accuracy": 0.9421622983870968,
+          "metric_average_jaccard": 0.13619904259456692,
+          "metric_average_pts_within_thresh": 0.19479166666666664,
+          "metric_err_mean_m": 2.592660427093506,
+          "metric_err_median_m": 1.2429251670837402
+        }
+      },
+      "native_onnx_difference": {
+        "xyz": {
+          "count": 7680,
+          "mean": 0.005286461740520954,
+          "p50": 0.0035874706709536812,
+          "p95": 0.015293408655822991,
+          "max": 0.11055789499366166,
+          "max_abs_component_all": 0.10237503051757812
+        },
+        "uv896": {
+          "count": 7680,
+          "mean": 3.89017820404072e-05,
+          "p50": 3.0517578125e-05,
+          "p95": 8.631674575031098e-05,
+          "max": 0.00028790225622731333,
+          "max_abs_component_all": 0.000244140625
+        }
+      },
+      "shared_frontend_inputs": {
+        "ray": {
+          "shape": [
+            1,
+            31,
+            256,
+            2
+          ],
+          "dtype": "float32",
+          "sha256": "9d74f491c4673114fdd268804c977cdf98a994edf99866dad36c95a47ab6b1f5"
+        },
+        "z_raw": {
+          "shape": [
+            1,
+            31,
+            256
+          ],
+          "dtype": "float32",
+          "sha256": "36e815be1cdca6225d5edb3f71040e2f57fb581ca43590ecdd9c660d4e731d4b"
+        },
+        "flow_visibility": {
+          "shape": [
+            1,
+            31,
+            256
+          ],
+          "dtype": "float32",
+          "sha256": "6fcabd673242d856062a8a2c45cddb828eadbf22f3291da28254d99aa3765979"
+        },
+        "uv": {
+          "shape": [
+            1,
+            31,
+            256,
+            2
+          ],
+          "dtype": "float32",
+          "sha256": "27aed2528c16053188d159d90dbb7684339d4347d103e928166b4398c89e967a"
+        },
+        "depth": {
+          "shape": [
+            1,
+            31,
+            336,
+            504
+          ],
+          "dtype": "float32",
+          "sha256": "259d9b9ec36317a73b913fa702c36e625df5c11330a61ef8aa20130d39006210"
+        },
+        "images": {
+          "shape": [
+            1,
+            31,
+            3,
+            896,
+            896
+          ],
+          "dtype": "float32",
+          "sha256": "5bf32304e60734ba702cd124515b2c1909472a767f24ba27caf5af228b473b70"
+        },
+        "K": {
+          "shape": [
+            1,
+            3,
+            3
+          ],
+          "dtype": "float32",
+          "sha256": "90842cc36c183aec75d6fb2cf41798284e5bb68456ab3f86adda7228a6161346"
+        },
+        "dino": {
+          "shape": [
+            1,
+            31,
+            384,
+            28,
+            28
+          ],
+          "dtype": "float32",
+          "sha256": "61d7082ced3a7cb6fac2d69821be3f202e66ca23c68617cba7af7dd42f6b4b58"
+        }
+      },
+      "dino_extractions": 1,
+      "visibility_source": "same binary WAFT forward-backward mask for all methods",
+      "precision": {
+        "native": "CUDA BF16 Mamba-3 mixer, other operations FP32",
+        "onnx": "CPU FP32 refiner",
+        "student": "CUDA FP32 lightweight refiner"
+      },
+      "official_full_minival_evaluated": false,
+      "depth_model": "DA3 metric-large",
+      "weight_loading": {
+        "ignored_training_only_config_fields": [
+          "pretrained_mamba3"
+        ],
+        "old": {
+          "loaded_tensors": 52,
+          "missing_frozen_backbone_tensors": 211,
+          "all_supplied_weights_bitwise_equal": true,
+          "public_export": true
+        },
+        "new": {
+          "loaded_tensors": 52,
+          "missing_frozen_backbone_tensors": 211,
+          "all_supplied_weights_bitwise_equal": true,
+          "public_export": true
+        },
+        "shared_dino_fingerprint": "8d57955799e933834846070bc2a5e528ca3be59beb8b7fa4b8a8c604504d2884",
+        "onnx_metadata_verified": true,
+        "student": {
+          "architecture": "vssd_local_global_128x2_v2_train",
+          "parameters": 617374,
+          "checkpoint_sha256": "16ec743e3a46c00a7bffd77db83862a8037a09fbc8ecc52e586d3c1d60761ada"
+        }
+      },
+      "flow_config": {
+        "cfg": "third_party/SEA-RAFT/config/eval/spring-M.json",
+        "fb_alpha": 0.05,
+        "fb_beta": 1.0,
+        "iters": 4,
+        "scale": -1,
+        "source": "waft_live",
+        "url": "MemorySlices/Tartan-C-T-TSKH-spring540x960-M"
+      },
+      "waft_checkpoint_sha256": "9f4b24f48b3937eca690a12b73bc3190effde6d4d4c87db01998fe63d846397f",
+      "manifest_sha256": "19f2f796359a9bf9487ac1e6f17925630fd24d773eb5544064f4ae0dea3f1f72",
+      "prediction_sha256": "e77c37d744f38d20c3b9d35d022902c1383a944124aa2cce074eee7d382158f1",
+      "old_sha256": "bcddf045311b76a91bc772e35901acbdb99f397b752ee0ba4beacb3fb1ded5f4",
+      "new_sha256": "c022511872c2d59a39bc1c39a3c62f44c142ee8ff9ca7dc7859881a78ae490b7",
+      "onnx_sha256": "7b1530c38e01496e60f67ef1cd6b9eb2ebb250ec8108cb908d9c07217edef604",
+      "elapsed_s": 20.706686231002095,
+      "torch": "2.12.1+cu130",
+      "gpu": "NVIDIA GeForce RTX 5090",
+      "gpu_peak_allocated_mib": 1261.36474609375,
+      "student_sha256": "16ec743e3a46c00a7bffd77db83862a8037a09fbc8ecc52e586d3c1d60761ada"
+    },
+    {
+      "status": "complete",
+      "scope": "three preselected training-validation clips; not official minival and not an independent test set",
+      "subset": "adt",
+      "clip_id": "Apartment_release_multiuser_cook_seq143_0",
+      "frames": 300,
+      "tracks": 900,
+      "scores": {
+        "old": {
+          "average_jaccard": 0.17550532872207011,
+          "average_pts_within_thresh": 0.3052009097801365,
+          "occlusion_accuracy": 0.7799481481481482,
+          "metric_average_jaccard": 0.33981854702473246,
+          "metric_average_pts_within_thresh": 0.5394756793424045,
+          "metric_err_mean_m": 0.2234724760055542,
+          "metric_err_median_m": 0.12139718979597092
+        },
+        "new": {
+          "average_jaccard": 0.22234123094795474,
+          "average_pts_within_thresh": 0.36912972347472167,
+          "occlusion_accuracy": 0.7799481481481482,
+          "metric_average_jaccard": 0.3588057923399924,
+          "metric_average_pts_within_thresh": 0.5734487849646862,
+          "metric_err_mean_m": 0.19783829152584076,
+          "metric_err_median_m": 0.09407595545053482
+        },
+        "onnx": {
+          "average_jaccard": 0.22231556659542456,
+          "average_pts_within_thresh": 0.36905311041059813,
+          "occlusion_accuracy": 0.7799481481481482,
+          "metric_average_jaccard": 0.35875032714146393,
+          "metric_average_pts_within_thresh": 0.5733322692629983,
+          "metric_err_mean_m": 0.1978902667760849,
+          "metric_err_median_m": 0.09416764974594116
+        },
+        "student": {
+          "average_jaccard": 0.2179256888221885,
+          "average_pts_within_thresh": 0.36791349108176047,
+          "occlusion_accuracy": 0.7799481481481482,
+          "metric_average_jaccard": 0.3577791943232026,
+          "metric_average_pts_within_thresh": 0.5729156857268265,
+          "metric_err_mean_m": 0.21338431537151337,
+          "metric_err_median_m": 0.0914260521531105
+        }
+      },
+      "native_onnx_difference": {
+        "xyz": {
+          "count": 125305,
+          "mean": 0.0006270254120048898,
+          "p50": 0.0003297292187454176,
+          "p95": 0.00201837301027761,
+          "max": 0.03336944193500024,
+          "max_abs_component_all": 0.038125038146972656
+        },
+        "uv896": {
+          "count": 125305,
+          "mean": 5.001416217345665e-05,
+          "p50": 5.501634636633284e-05,
+          "p95": 0.0001220703125,
+          "max": 0.0009556254454917943,
+          "max_abs_component_all": 0.00095367431640625
+        }
+      },
+      "shared_frontend_inputs": {
+        "ray": {
+          "shape": [
+            1,
+            300,
+            900,
+            2
+          ],
+          "dtype": "float32",
+          "sha256": "a0ee544519b789847abeadf64d297a70b44921d0e83702cda29a07746a33d171"
+        },
+        "z_raw": {
+          "shape": [
+            1,
+            300,
+            900
+          ],
+          "dtype": "float32",
+          "sha256": "71c2cb7587b47df62a565ec9e8d463803e6ed32b8f73bbdbe626f33eaea4e960"
+        },
+        "flow_visibility": {
+          "shape": [
+            1,
+            300,
+            900
+          ],
+          "dtype": "float32",
+          "sha256": "e5e66198d6dfec35ded0e594420e0d203acd88efcfbcca6985d41c3f75b242ce"
+        },
+        "uv": {
+          "shape": [
+            1,
+            300,
+            900,
+            2
+          ],
+          "dtype": "float32",
+          "sha256": "0435056b3285b2d99e91d656e76b5bdb304a79587bda946bacc87f49f7f691dd"
+        },
+        "depth": {
+          "shape": [
+            1,
+            300,
+            504,
+            504
+          ],
+          "dtype": "float32",
+          "sha256": "bf4d7f5ce80aa7aaf37725bf1255238d2186159242bc722a67a3fbccb59142ff"
+        },
+        "images": {
+          "shape": [
+            1,
+            300,
+            3,
+            896,
+            896
+          ],
+          "dtype": "float32",
+          "sha256": "f28f3cae484d174ec3e1629aabb7b48c3cba675a9dce2a03f27b482deaca292a"
+        },
+        "K": {
+          "shape": [
+            1,
+            3,
+            3
+          ],
+          "dtype": "float32",
+          "sha256": "b0d6f8f1d137f3b0e0d12b0458fd79439db3e9c5d2363fc62ccd32ac681e138c"
+        },
+        "dino": {
+          "shape": [
+            1,
+            300,
+            384,
+            28,
+            28
+          ],
+          "dtype": "float32",
+          "sha256": "6f3dd457d396ffb49ff0562ecb3c4a4ad2e4f568c61df2fa308ee426191edd4a"
+        }
+      },
+      "dino_extractions": 1,
+      "visibility_source": "same binary WAFT forward-backward mask for all methods",
+      "precision": {
+        "native": "CUDA BF16 Mamba-3 mixer, other operations FP32",
+        "onnx": "CPU FP32 refiner",
+        "student": "CUDA FP32 lightweight refiner"
+      },
+      "official_full_minival_evaluated": false,
+      "depth_model": "DA3 metric-large",
+      "weight_loading": {
+        "ignored_training_only_config_fields": [
+          "pretrained_mamba3"
+        ],
+        "old": {
+          "loaded_tensors": 52,
+          "missing_frozen_backbone_tensors": 211,
+          "all_supplied_weights_bitwise_equal": true,
+          "public_export": true
+        },
+        "new": {
+          "loaded_tensors": 52,
+          "missing_frozen_backbone_tensors": 211,
+          "all_supplied_weights_bitwise_equal": true,
+          "public_export": true
+        },
+        "shared_dino_fingerprint": "8d57955799e933834846070bc2a5e528ca3be59beb8b7fa4b8a8c604504d2884",
+        "onnx_metadata_verified": true,
+        "student": {
+          "architecture": "vssd_local_global_128x2_v2_train",
+          "parameters": 617374,
+          "checkpoint_sha256": "16ec743e3a46c00a7bffd77db83862a8037a09fbc8ecc52e586d3c1d60761ada"
+        }
+      },
+      "flow_config": {
+        "cfg": "third_party/SEA-RAFT/config/eval/spring-M.json",
+        "fb_alpha": 0.05,
+        "fb_beta": 1.0,
+        "iters": 4,
+        "scale": -1,
+        "source": "waft_live",
+        "url": "MemorySlices/Tartan-C-T-TSKH-spring540x960-M"
+      },
+      "waft_checkpoint_sha256": "9f4b24f48b3937eca690a12b73bc3190effde6d4d4c87db01998fe63d846397f",
+      "manifest_sha256": "19f2f796359a9bf9487ac1e6f17925630fd24d773eb5544064f4ae0dea3f1f72",
+      "prediction_sha256": "443b30b27dd2b6f45a7ff0afa2634e16265cfc587401984400bb0ad5f821be1e",
+      "old_sha256": "bcddf045311b76a91bc772e35901acbdb99f397b752ee0ba4beacb3fb1ded5f4",
+      "new_sha256": "c022511872c2d59a39bc1c39a3c62f44c142ee8ff9ca7dc7859881a78ae490b7",
+      "onnx_sha256": "7b1530c38e01496e60f67ef1cd6b9eb2ebb250ec8108cb908d9c07217edef604",
+      "elapsed_s": 168.58515488400008,
+      "torch": "2.12.1+cu130",
+      "gpu": "NVIDIA GeForce RTX 5090",
+      "gpu_peak_allocated_mib": 6384.017578125,
+      "student_sha256": "16ec743e3a46c00a7bffd77db83862a8037a09fbc8ecc52e586d3c1d60761ada"
+    }
+  ],
+  "equal_subset_mean": {
+    "old": {
+      "average_jaccard": 0.15347960410168318,
+      "average_pts_within_thresh": 0.2399392854054895,
+      "occlusion_accuracy": 0.8779691826615067,
+      "metric_average_jaccard": 0.3234053978677013,
+      "metric_average_pts_within_thresh": 0.43235754935055376,
+      "metric_err_mean_m": 0.8919559965531031,
+      "metric_err_median_m": 0.7371657316883405
+    },
+    "new": {
+      "average_jaccard": 0.16089172989070408,
+      "average_pts_within_thresh": 0.2489494481515768,
+      "occlusion_accuracy": 0.8779691826615067,
+      "metric_average_jaccard": 0.36192914182063846,
+      "metric_average_pts_within_thresh": 0.488007165971859,
+      "metric_err_mean_m": 0.9013641128937403,
+      "metric_err_median_m": 0.42285267760356265
+    },
+    "onnx": {
+      "average_jaccard": 0.16078769105991814,
+      "average_pts_within_thresh": 0.24874913364548548,
+      "occlusion_accuracy": 0.8779691826615067,
+      "metric_average_jaccard": 0.36195172377642093,
+      "metric_average_pts_within_thresh": 0.4880247793095986,
+      "metric_err_mean_m": 0.9012766927480698,
+      "metric_err_median_m": 0.42258666083216667
+    },
+    "student": {
+      "average_jaccard": 0.15867756545542544,
+      "average_pts_within_thresh": 0.24730777685124306,
+      "occlusion_accuracy": 0.8779691826615067,
+      "metric_average_jaccard": 0.23621654064476447,
+      "metric_average_pts_within_thresh": 0.34417168156706185,
+      "metric_err_mean_m": 1.179936225215594,
+      "metric_err_median_m": 0.6694649383425713
+    }
+  },
+  "official_full_minival_evaluated": false,
+  "media": [
+    {
+      "filename": "comparison_pstudio.mp4",
+      "expected_frames": 150,
+      "ffprobe": {
+        "streams": [
+          {
+            "index": 0,
+            "codec_name": "h264",
+            "codec_long_name": "H.264 / AVC / MPEG-4 AVC / MPEG-4 part 10",
+            "profile": "High",
+            "codec_type": "video",
+            "codec_tag_string": "avc1",
+            "codec_tag": "0x31637661",
+            "width": 2560,
+            "height": 1080,
+            "coded_width": 2560,
+            "coded_height": 1088,
+            "closed_captions": 0,
+            "film_grain": 0,
+            "has_b_frames": 2,
+            "pix_fmt": "yuv420p",
+            "level": 50,
+            "chroma_location": "left",
+            "field_order": "progressive",
+            "refs": 4,
+            "is_avc": "true",
+            "nal_length_size": "4",
+            "id": "0x1",
+            "r_frame_rate": "15/1",
+            "avg_frame_rate": "15/1",
+            "time_base": "1/15360",
+            "start_pts": 0,
+            "start_time": "0.000000",
+            "duration_ts": 153600,
+            "duration": "10.000000",
+            "bit_rate": "5308518",
+            "bits_per_raw_sample": "8",
+            "nb_frames": "150",
+            "nb_read_frames": "150",
+            "extradata_size": 47,
+            "disposition": {
+              "default": 1,
+              "dub": 0,
+              "original": 0,
+              "comment": 0,
+              "lyrics": 0,
+              "karaoke": 0,
+              "forced": 0,
+              "hearing_impaired": 0,
+              "visual_impaired": 0,
+              "clean_effects": 0,
+              "attached_pic": 0,
+              "timed_thumbnails": 0,
+              "non_diegetic": 0,
+              "captions": 0,
+              "descriptions": 0,
+              "metadata": 0,
+              "dependent": 0,
+              "still_image": 0
+            },
+            "tags": {
+              "language": "und",
+              "handler_name": "VideoHandler",
+              "vendor_id": "[0][0][0][0]",
+              "encoder": "Lavc60.31.102 libx264"
+            }
+          }
+        ],
+        "format": {
+          "filename": "/home/kasm-user/Desktop/tracking_comparison_kd_20261002/comparison_pstudio.mp4",
+          "nb_streams": 1,
+          "nb_programs": 0,
+          "format_name": "mov,mp4,m4a,3gp,3g2,mj2",
+          "format_long_name": "QuickTime / MOV",
+          "start_time": "0.000000",
+          "duration": "10.000000",
+          "size": "6638404",
+          "bit_rate": "5310723",
+          "probe_score": 100,
+          "tags": {
+            "major_brand": "isom",
+            "minor_version": "512",
+            "compatible_brands": "isomiso2avc1mp41",
+            "encoder": "Lavf60.16.100"
+          }
+        }
+      },
+      "full_decode": "passed",
+      "sha256": "186e8164deb9c62fc34cf533b4a85e83c150267187bd0cc58e489e0ad2c8116b",
+      "bytes": 6638404
+    },
+    {
+      "filename": "comparison_drivetrack.mp4",
+      "expected_frames": 31,
+      "ffprobe": {
+        "streams": [
+          {
+            "index": 0,
+            "codec_name": "h264",
+            "codec_long_name": "H.264 / AVC / MPEG-4 AVC / MPEG-4 part 10",
+            "profile": "High",
+            "codec_type": "video",
+            "codec_tag_string": "avc1",
+            "codec_tag": "0x31637661",
+            "width": 2560,
+            "height": 1080,
+            "coded_width": 2560,
+            "coded_height": 1088,
+            "closed_captions": 0,
+            "film_grain": 0,
+            "has_b_frames": 2,
+            "pix_fmt": "yuv420p",
+            "level": 50,
+            "chroma_location": "left",
+            "field_order": "progressive",
+            "refs": 4,
+            "is_avc": "true",
+            "nal_length_size": "4",
+            "id": "0x1",
+            "r_frame_rate": "15/1",
+            "avg_frame_rate": "15/1",
+            "time_base": "1/15360",
+            "start_pts": 0,
+            "start_time": "0.000000",
+            "duration_ts": 31744,
+            "duration": "2.066667",
+            "bit_rate": "14561852",
+            "bits_per_raw_sample": "8",
+            "nb_frames": "31",
+            "nb_read_frames": "31",
+            "extradata_size": 47,
+            "disposition": {
+              "default": 1,
+              "dub": 0,
+              "original": 0,
+              "comment": 0,
+              "lyrics": 0,
+              "karaoke": 0,
+              "forced": 0,
+              "hearing_impaired": 0,
+              "visual_impaired": 0,
+              "clean_effects": 0,
+              "attached_pic": 0,
+              "timed_thumbnails": 0,
+              "non_diegetic": 0,
+              "captions": 0,
+              "descriptions": 0,
+              "metadata": 0,
+              "dependent": 0,
+              "still_image": 0
+            },
+            "tags": {
+              "language": "und",
+              "handler_name": "VideoHandler",
+              "vendor_id": "[0][0][0][0]",
+              "encoder": "Lavc60.31.102 libx264"
+            }
+          }
+        ],
+        "format": {
+          "filename": "/home/kasm-user/Desktop/tracking_comparison_kd_20261002/comparison_drivetrack.mp4",
+          "nb_streams": 1,
+          "nb_programs": 0,
+          "format_name": "mov,mp4,m4a,3gp,3g2,mj2",
+          "format_long_name": "QuickTime / MOV",
+          "start_time": "0.000000",
+          "duration": "2.066667",
+          "size": "3763092",
+          "bit_rate": "14566805",
+          "probe_score": 100,
+          "tags": {
+            "major_brand": "isom",
+            "minor_version": "512",
+            "compatible_brands": "isomiso2avc1mp41",
+            "encoder": "Lavf60.16.100"
+          }
+        }
+      },
+      "full_decode": "passed",
+      "sha256": "431093276e3cc6ef3b6972782143c32c4a84220af29ae8c0b29b0bb5de57264d",
+      "bytes": 3763092
+    },
+    {
+      "filename": "comparison_adt.mp4",
+      "expected_frames": 300,
+      "ffprobe": {
+        "streams": [
+          {
+            "index": 0,
+            "codec_name": "h264",
+            "codec_long_name": "H.264 / AVC / MPEG-4 AVC / MPEG-4 part 10",
+            "profile": "High",
+            "codec_type": "video",
+            "codec_tag_string": "avc1",
+            "codec_tag": "0x31637661",
+            "width": 2560,
+            "height": 1080,
+            "coded_width": 2560,
+            "coded_height": 1088,
+            "closed_captions": 0,
+            "film_grain": 0,
+            "has_b_frames": 2,
+            "pix_fmt": "yuv420p",
+            "level": 50,
+            "chroma_location": "left",
+            "field_order": "progressive",
+            "refs": 4,
+            "is_avc": "true",
+            "nal_length_size": "4",
+            "id": "0x1",
+            "r_frame_rate": "15/1",
+            "avg_frame_rate": "15/1",
+            "time_base": "1/15360",
+            "start_pts": 0,
+            "start_time": "0.000000",
+            "duration_ts": 307200,
+            "duration": "20.000000",
+            "bit_rate": "4893866",
+            "bits_per_raw_sample": "8",
+            "nb_frames": "300",
+            "nb_read_frames": "300",
+            "extradata_size": 47,
+            "disposition": {
+              "default": 1,
+              "dub": 0,
+              "original": 0,
+              "comment": 0,
+              "lyrics": 0,
+              "karaoke": 0,
+              "forced": 0,
+              "hearing_impaired": 0,
+              "visual_impaired": 0,
+              "clean_effects": 0,
+              "attached_pic": 0,
+              "timed_thumbnails": 0,
+              "non_diegetic": 0,
+              "captions": 0,
+              "descriptions": 0,
+              "metadata": 0,
+              "dependent": 0,
+              "still_image": 0
+            },
+            "tags": {
+              "language": "und",
+              "handler_name": "VideoHandler",
+              "vendor_id": "[0][0][0][0]",
+              "encoder": "Lavc60.31.102 libx264"
+            }
+          }
+        ],
+        "format": {
+          "filename": "/home/kasm-user/Desktop/tracking_comparison_kd_20261002/comparison_adt.mp4",
+          "nb_streams": 1,
+          "nb_programs": 0,
+          "format_name": "mov,mp4,m4a,3gp,3g2,mj2",
+          "format_long_name": "QuickTime / MOV",
+          "start_time": "0.000000",
+          "duration": "20.000000",
+          "size": "12239262",
+          "bit_rate": "4895704",
+          "probe_score": 100,
+          "tags": {
+            "major_brand": "isom",
+            "minor_version": "512",
+            "compatible_brands": "isomiso2avc1mp41",
+            "encoder": "Lavf60.16.100"
+          }
+        }
+      },
+      "full_decode": "passed",
+      "sha256": "500348ac4dd1dce1fd004a62eae625513537cd35eb198443360c801787eeb6cf",
+      "bytes": 12239262
+    },
+    {
+      "filename": "comparison_all.mp4",
+      "expected_frames": 481,
+      "ffprobe": {
+        "streams": [
+          {
+            "index": 0,
+            "codec_name": "h264",
+            "codec_long_name": "H.264 / AVC / MPEG-4 AVC / MPEG-4 part 10",
+            "profile": "High",
+            "codec_type": "video",
+            "codec_tag_string": "avc1",
+            "codec_tag": "0x31637661",
+            "width": 2560,
+            "height": 1080,
+            "coded_width": 2560,
+            "coded_height": 1088,
+            "closed_captions": 0,
+            "film_grain": 0,
+            "has_b_frames": 2,
+            "pix_fmt": "yuv420p",
+            "level": 50,
+            "chroma_location": "left",
+            "field_order": "progressive",
+            "refs": 4,
+            "is_avc": "true",
+            "nal_length_size": "4",
+            "id": "0x1",
+            "r_frame_rate": "15/1",
+            "avg_frame_rate": "15/1",
+            "time_base": "1/15360",
+            "start_pts": 0,
+            "start_time": "0.000000",
+            "duration_ts": 492544,
+            "duration": "32.066667",
+            "bit_rate": "5646308",
+            "bits_per_raw_sample": "8",
+            "nb_frames": "481",
+            "nb_read_frames": "481",
+            "extradata_size": 47,
+            "disposition": {
+              "default": 1,
+              "dub": 0,
+              "original": 0,
+              "comment": 0,
+              "lyrics": 0,
+              "karaoke": 0,
+              "forced": 0,
+              "hearing_impaired": 0,
+              "visual_impaired": 0,
+              "clean_effects": 0,
+              "attached_pic": 0,
+              "timed_thumbnails": 0,
+              "non_diegetic": 0,
+              "captions": 0,
+              "descriptions": 0,
+              "metadata": 0,
+              "dependent": 0,
+              "still_image": 0
+            },
+            "tags": {
+              "language": "und",
+              "handler_name": "VideoHandler",
+              "vendor_id": "[0][0][0][0]",
+              "encoder": "Lavc60.31.102 libx264"
+            }
+          }
+        ],
+        "format": {
+          "filename": "/home/kasm-user/Desktop/tracking_comparison_kd_20261002/comparison_all.mp4",
+          "nb_streams": 1,
+          "nb_programs": 0,
+          "format_name": "mov,mp4,m4a,3gp,3g2,mj2",
+          "format_long_name": "QuickTime / MOV",
+          "start_time": "0.000000",
+          "duration": "32.066667",
+          "size": "22639230",
+          "bit_rate": "5648040",
+          "probe_score": 100,
+          "tags": {
+            "major_brand": "isom",
+            "minor_version": "512",
+            "compatible_brands": "isomiso2avc1mp41",
+            "encoder": "Lavf60.16.100"
+          }
+        }
+      },
+      "full_decode": "passed",
+      "sha256": "ae4a8e5fbfde1661e95b3c961f4a2d651f4717ed70adce78a1578c2a1d5ddd18",
+      "bytes": 22639230
+    }
+  ],
+  "audit_passed": true
+}

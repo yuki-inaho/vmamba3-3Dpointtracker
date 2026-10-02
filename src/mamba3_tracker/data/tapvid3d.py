@@ -99,6 +99,15 @@ def peek_clip_F(path: str | Path) -> int:
         return int(d["images_jpeg_bytes"].shape[0])
 
 
+def load_tracking_labels(path: str | Path) -> tuple[torch.Tensor, torch.Tensor]:
+    """Load full-clip XYZ/visibility labels without decoding any image frames."""
+    path = Path(path).expanduser().resolve()
+    with np.load(path, allow_pickle=True) as data:
+        tracks = torch.from_numpy(np.asarray(data["tracks_XYZ"])).float()
+        visibility = torch.from_numpy(np.asarray(data["visibility"])).bool()
+    return tracks, visibility
+
+
 def has_images(path: str | Path) -> bool:
     """True if the .npz contains image bytes (False for labels-only clips).
 

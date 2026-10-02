@@ -1,0 +1,134 @@
+{
+  "success": true,
+  "release_url": "https://github.com/yuki-inaho/vmamba3-3Dpointtracker/releases/tag/mamba3-preview-20261001-step200",
+  "redownload_directory": "/tmp/kd-release-download-Kxn6Ka",
+  "verified_assets": [
+    {
+      "name": "refiner_kd_v2_best180_20261002.onnx",
+      "bytes": 2553222,
+      "sha256": "7dc47ac5cd8d06e0c7e285ba88fce75ecc55df4d47b2a6d15535abb66bd162db"
+    },
+    {
+      "name": "refiner_kd_v2_best180_20261002.pt",
+      "bytes": 2492693,
+      "sha256": "9b25028dd932a5d54485bb6c8e975cea0e344df1edbb9ff9fbfd47d5d62ef3dc"
+    },
+    {
+      "name": "refiner_kd_v2_best180_20261002_MODEL_CARD.md",
+      "bytes": 4362,
+      "sha256": "fb3ff75454d9c50c9ebb2ea9cc4c234c1ce4bdd2693d56aaf2e62dcf9bb5448c"
+    },
+    {
+      "name": "refiner_kd_v2_best180_20261002_SHA256SUMS",
+      "bytes": 866,
+      "sha256": "659dafa168629da9b9daaa508c677ac7df88b408a0e38c8a98ba14c6d75c4484"
+    },
+    {
+      "name": "refiner_kd_v2_best180_20261002_export_report.json",
+      "bytes": 4781,
+      "sha256": "0d0cfd1384a6ae9a6e876f9a529ee32ea19c7c1985002586fdb7e43661da8993"
+    },
+    {
+      "name": "refiner_kd_v2_best180_20261002_gpu_report.json",
+      "bytes": 5385,
+      "sha256": "d4c82bf7851846498d864110e105b7bc736942915cc290bbe273c4ae66431417"
+    },
+    {
+      "name": "refiner_kd_v2_best180_20261002_metrics.json",
+      "bytes": 23729,
+      "sha256": "dd6bb6516dfcaf9df4ab6000acccc95dc15b5d3439120929d6bd11358cf50723"
+    },
+    {
+      "name": "refiner_kd_v2_best180_20261002_source.zip",
+      "bytes": 449891,
+      "sha256": "68b2e9193e77da96b46a5282ba96a7e4c4e9285854fc3528be072e9f0f0ce3ca"
+    },
+    {
+      "name": "refiner_kd_v2_best180_20261002_train.pt",
+      "bytes": 2500597,
+      "sha256": "16ec743e3a46c00a7bffd77db83862a8037a09fbc8ecc52e586d3c1d60761ada"
+    }
+  ],
+  "original_assets": [
+    {
+      "name": "export_report.json",
+      "digest": "sha256:286da12a8048fcd19a7983deb6a3b6df7edec86139d353e0472687cdbd52c4ef"
+    },
+    {
+      "name": "LICENSE",
+      "digest": "sha256:be988974185f28770450d12b74859e574bc820a02b55223f0ac3faa182be45b0"
+    },
+    {
+      "name": "metrics.json",
+      "digest": "sha256:f953f3ce4c5d4851627374e5c7b2bd6fdb8ce9f05831a97a6a278cbfe8dfb53c"
+    },
+    {
+      "name": "MODEL_CARD.md",
+      "digest": "sha256:38b39153d2c9013991bd8542523466b136609fe737dc42d9bb8774afa85847a1"
+    },
+    {
+      "name": "MODEL_CARD_DAOFF.md",
+      "digest": "sha256:8ba233a8f0f7423a1dcd8b78b82ad5149403203cb4d75d23824aeb9730c675d0"
+    },
+    {
+      "name": "MODEL_CARD_DAOFF_20261002.md",
+      "digest": "sha256:8601e667400a9de76934148328fbd938978c78dd8b7dd64556886a054c46efb5"
+    },
+    {
+      "name": "pretrained_mamba3_report.json",
+      "digest": "sha256:b8981ca78faa7272c858a5476840348bdd9a8d815e0a234232a3058b8d0becc7"
+    },
+    {
+      "name": "public_export_report_20261002.json",
+      "digest": "sha256:c35c4707c84eb8053124ffd7c90e23835984eb07ccec0043b36e0ca8f319af93"
+    },
+    {
+      "name": "reference_progress.json",
+      "digest": "sha256:7e0b3e0bcfbdce397bf8689a7550d9c7ab26596dab508299ddfec6b358e2c810"
+    },
+    {
+      "name": "run_config_20261002.json",
+      "digest": "sha256:c475f38f05fbd76bc0fd5c329936192042d8386d643f948322807f191ece05d6"
+    },
+    {
+      "name": "SHA256SUMS",
+      "digest": "sha256:c720e9a001de885fe57df51cfb37b2bdd0196707728e8034b616be79dde14d2d"
+    },
+    {
+      "name": "SHA256SUMS_20261002",
+      "digest": "sha256:efa819dda47d9a33862d52a3af9c4862fbde86f263686499bd80b4f2d77435b4"
+    },
+    {
+      "name": "SHA256SUMS_DAOFF",
+      "digest": "sha256:998a636c43a3b95333543248b929656fa447b8d51abce20aa3158abcd1eb6b7c"
+    },
+    {
+      "name": "tracker_mamba3_daoff_best200.pt",
+      "digest": "sha256:bcddf045311b76a91bc772e35901acbdb99f397b752ee0ba4beacb3fb1ded5f4"
+    },
+    {
+      "name": "tracker_mamba3_daoff_best80.pt",
+      "digest": "sha256:c022511872c2d59a39bc1c39a3c62f44c142ee8ff9ca7dc7859881a78ae490b7"
+    },
+    {
+      "name": "tracker_mamba3_step200.pt",
+      "digest": "sha256:316177330160a551ae5f25a0d4e7008a9df8d0e47c153c2efa023bb7eb470a7a"
+    },
+    {
+      "name": "tracker_mamba3_step80.onnx",
+      "digest": "sha256:7b1530c38e01496e60f67ef1cd6b9eb2ebb250ec8108cb908d9c07217edef604"
+    },
+    {
+      "name": "training_result_20261001.json",
+      "digest": "sha256:7c7511fadf0f00cb95eb24b807b2d2299ec81b6484cf34244cfffcd36d315395"
+    },
+    {
+      "name": "training_summary_20261002.json",
+      "digest": "sha256:7ce744a4861302181fc4c3ca02b6f3428019d0c2914f9ef58beccdd600e2fd92"
+    }
+  ],
+  "notes_verified": true,
+  "original_assets_unchanged": true,
+  "asset_count": 28,
+  "verified_at": "2026-10-02 22:25:40 JST+0900"
+}

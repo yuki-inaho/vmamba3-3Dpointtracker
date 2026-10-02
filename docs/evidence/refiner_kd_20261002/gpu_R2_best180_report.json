@@ -1,0 +1,206 @@
+{
+  "success": true,
+  "status": "complete",
+  "cases": [
+    {
+      "name": "b1_f1_n1",
+      "errors": {
+        "xyz": 0.0,
+        "uv_refined": 0.0,
+        "vis_logits": 2.9336661100387573e-08,
+        "delta_uv": 3.725290298461914e-09
+      }
+    },
+    {
+      "name": "b2_f8_n7",
+      "errors": {
+        "xyz": 1.049041748046875e-05,
+        "uv_refined": 0.0,
+        "vis_logits": 4.6938657760620117e-07,
+        "delta_uv": 5.494803190231323e-08
+      }
+    },
+    {
+      "name": "b1_f31_n32",
+      "errors": {
+        "xyz": 6.008148193359375e-05,
+        "uv_refined": 0.0,
+        "vis_logits": 5.736947059631348e-06,
+        "delta_uv": 2.5797635316848755e-07
+      },
+      "chunk1_errors": {
+        "xyz": 8.392333984375e-05,
+        "uv_refined": 0.0,
+        "vis_logits": 7.852911949157715e-06,
+        "delta_uv": 3.5669654607772827e-07
+      },
+      "permutation_errors": {
+        "xyz": 0.000102996826171875,
+        "uv_refined": 0.0,
+        "vis_logits": 9.551644325256348e-06,
+        "delta_uv": 4.3492764234542847e-07
+      }
+    },
+    {
+      "name": "b1_f128_n7",
+      "errors": {
+        "xyz": 5.340576171875e-05,
+        "uv_refined": 3.814697265625e-06,
+        "vis_logits": 4.708766937255859e-06,
+        "delta_uv": 3.427267074584961e-07
+      }
+    },
+    {
+      "name": "b1_f257_n1",
+      "errors": {
+        "xyz": 3.62396240234375e-05,
+        "uv_refined": 4.76837158203125e-07,
+        "vis_logits": 3.4868717193603516e-06,
+        "delta_uv": 1.825392246246338e-07
+      }
+    },
+    {
+      "name": "b1_f300_n7",
+      "errors": {
+        "xyz": 5.14984130859375e-05,
+        "uv_refined": 0.0,
+        "vis_logits": 6.258487701416016e-06,
+        "delta_uv": 2.4866312742233276e-07
+      }
+    },
+    {
+      "name": "b1_f600_n32",
+      "errors": {
+        "xyz": 0.00013113021850585938,
+        "uv_refined": 6.103515625e-05,
+        "vis_logits": 1.633167266845703e-05,
+        "delta_uv": 7.906928658485413e-07
+      }
+    },
+    {
+      "name": "b1_f600_n900",
+      "errors": {
+        "xyz": 0.0002655982971191406,
+        "uv_refined": 6.103515625e-05,
+        "vis_logits": 3.17692756652832e-05,
+        "delta_uv": 1.8496066331863403e-06
+      }
+    },
+    {
+      "name": "b1_f31_n7_invisible",
+      "errors": {
+        "xyz": 1.1920928955078125e-06,
+        "uv_refined": 0.0,
+        "vis_logits": 2.123415470123291e-07,
+        "delta_uv": 1.4901161193847656e-08
+      },
+      "chunk1_errors": {
+        "xyz": 9.5367431640625e-07,
+        "uv_refined": 0.0,
+        "vis_logits": 2.123415470123291e-07,
+        "delta_uv": 1.3969838619232178e-08
+      },
+      "permutation_errors": {
+        "xyz": 1.1920928955078125e-06,
+        "uv_refined": 0.0,
+        "vis_logits": 2.123415470123291e-07,
+        "delta_uv": 1.4901161193847656e-08
+      }
+    },
+    {
+      "name": "real_pstudio",
+      "errors": {
+        "xyz": 6.9141387939453125e-06,
+        "uv_refined": 6.103515625e-05,
+        "vis_logits": 2.3171305656433105e-06,
+        "delta_uv": 1.3248063623905182e-07
+      }
+    },
+    {
+      "name": "real_drivetrack",
+      "errors": {
+        "xyz": 2.288818359375e-05,
+        "uv_refined": 0.0,
+        "vis_logits": 4.0605664253234863e-07,
+        "delta_uv": 2.0489096641540527e-08
+      },
+      "chunk1_errors": {
+        "xyz": 1.9073486328125e-05,
+        "uv_refined": 6.103515625e-05,
+        "vis_logits": 4.0605664253234863e-07,
+        "delta_uv": 2.0489096641540527e-08
+      },
+      "permutation_errors": {
+        "xyz": 1.52587890625e-05,
+        "uv_refined": 6.103515625e-05,
+        "vis_logits": 3.3527612686157227e-07,
+        "delta_uv": 1.862645149230957e-08
+      }
+    },
+    {
+      "name": "real_adt",
+      "errors": {
+        "xyz": 1.1444091796875e-05,
+        "uv_refined": 0.0001220703125,
+        "vis_logits": 1.7136335372924805e-06,
+        "delta_uv": 9.080395102500916e-08
+      }
+    }
+  ],
+  "onnx_sha256": "7dc47ac5cd8d06e0c7e285ba88fce75ecc55df4d47b2a6d15535abb66bd162db",
+  "profile": {
+    "cuda_compute_verified": true,
+    "whole_graph_gpu_only": false,
+    "node_events_by_provider": {
+      "CUDAExecutionProvider": 114436,
+      "CPUExecutionProvider": 23485
+    },
+    "cuda_ops": {
+      "Add": 19215,
+      "BiasGelu": 2562,
+      "Clip": 1708,
+      "Concat": 854,
+      "Conv": 854,
+      "Div": 5124,
+      "Einsum": 3416,
+      "Exp": 427,
+      "FusedMatMul": 427,
+      "Gather": 2989,
+      "GridSample": 1281,
+      "LayerNormalization": 4697,
+      "Less": 854,
+      "Log": 1708,
+      "MatMul": 9394,
+      "Mul": 11956,
+      "Neg": 854,
+      "Pow": 2562,
+      "QuickGelu": 854,
+      "ReduceMean": 2562,
+      "Reshape": 10248,
+      "Shape": 2989,
+      "Softmax": 1708,
+      "Softplus": 2562,
+      "Split": 1281,
+      "Sqrt": 2562,
+      "Squeeze": 1708,
+      "Sub": 1708,
+      "Tanh": 427,
+      "Transpose": 9394,
+      "Unsqueeze": 4697,
+      "Where": 854
+    },
+    "cpu_ops": {
+      "Concat": 5978,
+      "Gather": 7259,
+      "Mul": 1708,
+      "Unsqueeze": 8540
+    },
+    "cpu_tensor_types": {
+      "int64": 80276
+    },
+    "cpu_nodes_have_only_integer_tensors": true,
+    "major_compute_on_cpu": false
+  },
+  "profile_sha256": "14be753d870083a54e5733da32a561dab16b062753da54c55f8eb4dca0a9c82c",
+  "scope": "Dynamic and declared real-monitor fixtures, student FP32 numerical equivalence; not task accuracy"
+}

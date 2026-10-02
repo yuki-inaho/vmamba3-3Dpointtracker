@@ -128,6 +128,13 @@ class OnnxV35Refiner(nn.Module):
             raise ValueError("patch_size must be a positive odd integer")
         if float(config.get("image_size", 896)) != 896:
             raise ValueError("The deployment contract uses 896-pixel coordinates")
+        self._init_geometry(config, dino_dim)
+        self.layers = nn.ModuleList([PortableMamba3Adapter(
+            self.dim, bool(config.get("official_mamba3_bidirectional", True)))
+            for _ in range(int(config.get("num_layers", 2)))])
+
+    def _init_geometry(self, config: dict[str, Any], dino_dim: int = 384) -> None:
+        """Shared trainable geometry, without a backbone or temporal mixer."""
         self.dim = int(config.get("dim", 128))
         self.image_size = float(config.get("image_size", 896))
         self.patch_size = int(config.get("patch_size", 5))
@@ -137,8 +144,6 @@ class OnnxV35Refiner(nn.Module):
         d_proj, layers = int(config.get("d_proj", 64)), int(config.get("num_layers", 2))
         self.feat_proj = nn.Linear(dino_dim, d_proj)
         self.embed = _mlp(4 + self.patch_size**2 + d_proj, self.dim, self.dim)
-        self.layers = nn.ModuleList([PortableMamba3Adapter(
-            self.dim, bool(config.get("official_mamba3_bidirectional", True))) for _ in range(layers)])
         self.pre_norms = nn.ModuleList([nn.LayerNorm(self.dim) for _ in range(layers)])
         self.post_norms = nn.ModuleList([nn.LayerNorm(self.dim) for _ in range(layers)])
         self.out_norm = nn.LayerNorm(self.dim)
@@ -148,6 +153,12 @@ class OnnxV35Refiner(nn.Module):
     def forward(self, ray: Tensor, z_raw: Tensor, vis: Tensor, uv: Tensor,
                 depth_map: Tensor, dino_features: Tensor, K: Tensor,
                 z_ref: Tensor) -> tuple[Tensor, Tensor, Tensor, Tensor]:
+        x, depth, _ = self._encode_inputs(ray, z_raw, vis, uv, depth_map, dino_features, z_ref)
+        return self._readout(x, depth, uv, K)
+
+    def _encode_inputs(self, ray: Tensor, z_raw: Tensor, vis: Tensor, uv: Tensor,
+                       depth_map: Tensor, dino_features: Tensor, z_ref: Tensor
+                       ) -> tuple[Tensor, Tensor, list[Tensor]]:
         b, t, n, _ = ray.shape
         k = self.patch_size
         uv_norm = 2 * uv / self.image_size - 1
@@ -167,9 +178,19 @@ class OnnxV35Refiner(nn.Module):
         feat = torch.cat((ray, (z_raw / z_ref).unsqueeze(-1), vis.unsqueeze(-1),
                           patch * gate, self.feat_proj(features) * gate), -1)
         x = self.embed(feat).permute(0, 2, 1, 3).reshape(b * n, t, self.dim)
+        hidden = []
         for pre, layer, post in zip(self.pre_norms, self.layers, self.post_norms):
-            x = post(x + layer(pre(x)))
+            x = post(x + self._mix(layer, pre(x)))
+            hidden.append(x.reshape(b, n, t, self.dim).permute(0, 2, 1, 3))
         x = self.out_norm(x).reshape(b, n, t, self.dim).permute(0, 2, 1, 3)
+        return x, depth, hidden
+
+    def _mix(self, layer: nn.Module, x: Tensor) -> Tensor:
+        return layer(x)
+
+    def _readout(self, x: Tensor, depth: Tensor, uv: Tensor, K: Tensor
+                 ) -> tuple[Tensor, Tensor, Tensor, Tensor]:
+        b, t, n, _ = uv.shape
         dlog = self.dz_head(x).squeeze(-1).clamp(-self.max_log_correction, self.max_log_correction)
         delta_uv = self.max_delta_uv * torch.tanh(self.duv_head(x))
         new_uv = uv + delta_uv

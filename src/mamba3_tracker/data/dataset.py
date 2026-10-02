@@ -13,19 +13,26 @@ import numpy as np
 import torch
 from torch.utils.data import Dataset
 
-from .tapvid3d import SUBSETS, list_clips, load_clip, peek_clip_F
+from .tapvid3d import (
+    SUBSETS,
+    list_clips,
+    load_clip,
+    load_tracking_labels,
+    peek_clip_F,
+)
 from .fixed_da import DAIndex, PhotometricPattern, apply_pattern
 
 
 @dataclass
 class TrackingBatch:
     """One training batch. Variable N_q is padded to N_q_max with `query_mask`."""
-    images: torch.Tensor          # (B, F, 3, H, W)
-    queries_xyt: torch.Tensor     # (B, N_q_max, 3)
-    tracks_XYZ: torch.Tensor      # (B, F, N_q_max, 3)
-    visibility: torch.Tensor      # (B, F, N_q_max) bool
-    query_mask: torch.Tensor      # (B, N_q_max) bool — True where the query slot is real
-    K: torch.Tensor               # (B, 3, 3)
+
+    images: torch.Tensor  # (B, F, 3, H, W)
+    queries_xyt: torch.Tensor  # (B, N_q_max, 3)
+    tracks_XYZ: torch.Tensor  # (B, F, N_q_max, 3)
+    visibility: torch.Tensor  # (B, F, N_q_max) bool
+    query_mask: torch.Tensor  # (B, N_q_max) bool — True where the query slot is real
+    K: torch.Tensor  # (B, 3, 3)
     clip_ids: list[str]
     subsets: list[str]
     # Needed only to align a precomputed full-clip flow track (e.g. WAFT) with this window.
@@ -37,6 +44,73 @@ class TrackingBatch:
     depth: torch.Tensor | None = None  # v31: (B, F, Hd, Wd) cached DA3 metric depth
     da_index: DAIndex | None = None
     augmentation_ids: list[int] = field(default_factory=list)
+
+
+def _valid_gt_anchor_mask(
+    tracks: torch.Tensor,
+    visibility: torch.Tensor,
+    intrinsics: torch.Tensor,
+    height: int,
+    width: int,
+) -> torch.Tensor:
+    """Return frame/query anchors that are visible, projectable, and in bounds."""
+    if tracks.ndim != 3 or tracks.shape[-1] != 3:
+        raise ValueError("tracks must have shape (F, N, 3)")
+    if visibility.shape != tracks.shape[:2]:
+        raise ValueError("visibility must have shape (F, N)")
+    if intrinsics.shape != (3, 3):
+        raise ValueError("intrinsics must have shape (3, 3)")
+    if height <= 0 or width <= 0:
+        raise ValueError("image dimensions must be positive")
+    z = tracks[..., 2].clamp_min(1e-6)
+    projected = torch.stack(
+        (
+            intrinsics[0, 0] * tracks[..., 0] / z + intrinsics[0, 2],
+            intrinsics[1, 1] * tracks[..., 1] / z + intrinsics[1, 2],
+        ),
+        dim=-1,
+    )
+    return (
+        visibility
+        & torch.isfinite(tracks).all(-1)
+        & (tracks[..., 2] > 1e-6)
+        & torch.isfinite(projected).all(-1)
+        & (projected[..., 0] >= 0)
+        & (projected[..., 0] < width)
+        & (projected[..., 1] >= 0)
+        & (projected[..., 1] < height)
+    )
+
+
+def choose_anchor_valid_window(
+    tracks: torch.Tensor,
+    visibility: torch.Tensor,
+    intrinsics: torch.Tensor,
+    height: int,
+    width: int,
+    window_size: int,
+    initial_start: int,
+) -> int:
+    """Keep a valid initial window; otherwise choose the next valid same-clip window.
+
+    Candidate starts are visited in increasing order after ``initial_start`` and wrap
+    to zero. This preserves every already-valid deterministic cache window exactly.
+    """
+    if window_size <= 0 or window_size > tracks.shape[0]:
+        raise ValueError("window_size must be in [1, clip_frames]")
+    max_start = tracks.shape[0] - window_size
+    if not 0 <= initial_start <= max_start:
+        raise ValueError("initial_start is outside the legal window range")
+    valid = _valid_gt_anchor_mask(tracks, visibility, intrinsics, height, width)
+    if bool(valid[initial_start : initial_start + window_size].any()):
+        return initial_start
+    candidates = list(range(initial_start + 1, max_start + 1)) + list(
+        range(0, initial_start)
+    )
+    for start in candidates:
+        if bool(valid[start : start + window_size].any()):
+            return start
+    raise ValueError("Clip has no window with any valid visible GT anchor")
 
 
 class TAPVid3DDataset(Dataset):
@@ -63,6 +137,7 @@ class TAPVid3DDataset(Dataset):
         fixed_patterns: tuple[PhotometricPattern, ...] | None = None,
         worker_cpu_threads: int | None = None,
         worker_multiprocessing_context: str | None = None,
+        strict_reanchor_window: bool = False,
     ) -> None:
         self.clip_paths = list(clip_paths)
         self.window_size = window_size
@@ -73,11 +148,17 @@ class TAPVid3DDataset(Dataset):
             Path(da3_depth_root).expanduser() if da3_depth_root is not None else None
         )
         self.reanchor_window = bool(reanchor_window)
+        self.strict_reanchor_window = bool(strict_reanchor_window)
+        if self.strict_reanchor_window and not self.reanchor_window:
+            raise ValueError("strict_reanchor_window requires reanchor_window=True")
         self._rng = random.Random(seed)
         self.fixed_window_seed = fixed_window_seed
         self.fixed_patterns = fixed_patterns
         from .bucket_batch import validate_worker_configuration
-        validate_worker_configuration(worker_cpu_threads, worker_multiprocessing_context)
+
+        validate_worker_configuration(
+            worker_cpu_threads, worker_multiprocessing_context
+        )
         self.worker_cpu_threads = worker_cpu_threads
         self.worker_multiprocessing_context = worker_multiprocessing_context
         if fixed_patterns and (not augment or fixed_window_seed is None):
@@ -88,11 +169,13 @@ class TAPVid3DDataset(Dataset):
     def __len__(self) -> int:
         return len(self.clip_paths)
 
-    def __getitem__(self, idx: int | DAIndex) -> dict:
-        da_index = idx if isinstance(idx, DAIndex) else None
+    def __getitem__(self, index: int | DAIndex) -> dict:
+        da_index = index if isinstance(index, DAIndex) else None
+        idx = index.clip if isinstance(index, DAIndex) else index
         if da_index is not None:
-            idx = da_index.clip
-            if not self.fixed_patterns or not 0 <= da_index.pattern < len(self.fixed_patterns):
+            if not self.fixed_patterns or not 0 <= da_index.pattern < len(
+                self.fixed_patterns
+            ):
                 raise ValueError("Unknown fixed DA pattern")
         elif self.fixed_patterns:
             raise ValueError("Fixed DA dataset requires explicit pattern indices")
@@ -131,11 +214,14 @@ class TAPVid3DDataset(Dataset):
         sy = self.image_size / float(H_orig)
         if images.shape[-1] != self.image_size or images.shape[-2] != self.image_size:
             images = torch.nn.functional.interpolate(
-                images, size=(self.image_size, self.image_size),
-                mode="bilinear", align_corners=False,
+                images,
+                size=(self.image_size, self.image_size),
+                mode="bilinear",
+                align_corners=False,
             )
 
         if da_index is not None:
+            assert self.fixed_patterns is not None
             images = apply_pattern(images, self.fixed_patterns[da_index.pattern])
         elif self.augment:
             images = _photometric_aug(images, self._rng)
@@ -158,7 +244,81 @@ class TAPVid3DDataset(Dataset):
         # window contains zero anchors, re-cast every query's anchor to
         # frame 0 of the window so we still have GT supervision.
         reanchored = False
-        if self.reanchor_window:
+        anchor_window_fallback = False
+        if self.strict_reanchor_window:
+            Kc = clip.K
+            if not bool(torch.isfinite(Kc).all()) or not bool(
+                (Kc[0, 0] > 0) & (Kc[1, 1] > 0)
+            ):
+                raise ValueError(
+                    f"Strict reanchor requires finite positive intrinsics: {path}"
+                )
+            anchor_valid = _valid_gt_anchor_mask(tracks, vis, Kc, H_orig, W_orig)
+            sel = torch.nonzero(anchor_valid.any(dim=0), as_tuple=True)[0]
+            if sel.numel() == 0 and self.window_size is not None:
+                full_tracks, full_vis = load_tracking_labels(path)
+                chosen_start = choose_anchor_valid_window(
+                    full_tracks[:, orig_idx],
+                    full_vis[:, orig_idx],
+                    Kc,
+                    H_orig,
+                    W_orig,
+                    self.window_size,
+                    start,
+                )
+                if chosen_start != start:
+                    start = chosen_start
+                    end = start + self.window_size
+                    clip = load_clip(path, frames=(start, end))
+                    tracks = clip.tracks_XYZ[:, orig_idx]
+                    vis = clip.visibility[:, orig_idx]
+                    images = clip.images
+                    if (
+                        images.shape[-1] != self.image_size
+                        or images.shape[-2] != self.image_size
+                    ):
+                        images = torch.nn.functional.interpolate(
+                            images,
+                            size=(self.image_size, self.image_size),
+                            mode="bilinear",
+                            align_corners=False,
+                        )
+                    if da_index is not None:
+                        assert self.fixed_patterns is not None
+                        images = apply_pattern(
+                            images, self.fixed_patterns[da_index.pattern]
+                        )
+                    elif self.augment:
+                        images = _photometric_aug(images, self._rng)
+                    H_orig, W_orig = int(clip.H), int(clip.W)
+                    sx = self.image_size / float(W_orig)
+                    sy = self.image_size / float(H_orig)
+                    Kc = clip.K
+                    anchor_valid = _valid_gt_anchor_mask(
+                        tracks, vis, Kc, H_orig, W_orig
+                    )
+                    sel = torch.nonzero(anchor_valid.any(dim=0), as_tuple=True)[0]
+                    anchor_window_fallback = True
+            if sel.numel() == 0:
+                raise ValueError(
+                    f"No valid visible GT anchor in strict window: {path} [{start},{end})"
+                )
+            z = tracks[..., 2].clamp_min(1e-6)
+            projected = torch.stack(
+                (
+                    Kc[0, 0] * tracks[..., 0] / z + Kc[0, 2],
+                    Kc[1, 1] * tracks[..., 1] / z + Kc[1, 2],
+                ),
+                dim=-1,
+            )
+            first = anchor_valid[:, sel].long().argmax(dim=0)
+            xy = projected[first, sel]
+            queries = torch.cat((xy, (first.float() + start).unsqueeze(-1)), dim=-1)
+            tracks = tracks[:, sel]
+            vis = vis[:, sel]
+            orig_idx = orig_idx[sel]
+            reanchored = True
+        elif self.reanchor_window:
             # The anchor frame marks which frame is the QUESTION, not a different kind of
             # annotation: every point is labelled in every frame, and measurably the anchor is
             # neither the first visible frame (1-3% of the time) nor frame 0 (0.4%) -- it is an
@@ -170,7 +330,9 @@ class TAPVid3DDataset(Dataset):
             in_win = vis.any(dim=0)
             if bool(in_win.any()):
                 sel = torch.nonzero(in_win, as_tuple=True)[0]
-                first = vis[:, sel].float().argmax(dim=0)  # first visible frame, per point
+                first = (
+                    vis[:, sel].float().argmax(dim=0)
+                )  # first visible frame, per point
                 tracks = tracks[:, sel]
                 vis = vis[:, sel]
                 orig_idx = orig_idx[sel]
@@ -221,6 +383,7 @@ class TAPVid3DDataset(Dataset):
             "clip_id": clip.clip_id,
             "subset": clip.subset,
             "frame_start": int(start),
+            "window_fallback": anchor_window_fallback,
             "query_idx": orig_idx,
             "da_index": da_index,
         }
@@ -229,20 +392,22 @@ class TAPVid3DDataset(Dataset):
             try:
                 with np.load(depth_path) as dd:
                     if "depth_q" in dd:
-                        q = np.asarray(dd["depth_q"][start:end])         # (F, Hd, Wd) uint16
+                        q = np.asarray(dd["depth_q"][start:end])  # (F, Hd, Wd) uint16
                         d_min = float(dd["d_min"])
                         d_max = float(dd["d_max"])
                         scale = max(d_max - d_min, 1e-6)
                         depth_window = torch.from_numpy(
                             d_min + q.astype(np.float32) * (scale / 65535.0)
-                        )                                                # (F, Hd, Wd) float32
-                    else:                                                # legacy float32 cache
+                        )  # (F, Hd, Wd) float32
+                    else:  # legacy float32 cache
                         depth_window = torch.from_numpy(
                             np.asarray(dd["depth"][start:end])
                         ).float()
             except Exception as e:
                 if da_index is not None:
-                    raise RuntimeError(f"Fixed DA depth cache is invalid: {depth_path}") from e
+                    raise RuntimeError(
+                        f"Fixed DA depth cache is invalid: {depth_path}"
+                    ) from e
                 # A corrupt/truncated depth cache for one clip must not crash training
                 # (a single bad .npz once wedged v42 in an infinite restart loop). Skip
                 # this clip and draw the next one instead.
@@ -305,7 +470,9 @@ def collate_tracking(items: list[dict]) -> TrackingBatch:
         query_idx=query_idx,
         depth=depth,
         da_index=items[0].get("da_index"),
-        augmentation_ids=[it["da_index"].pattern for it in items if it.get("da_index") is not None],
+        augmentation_ids=[
+            it["da_index"].pattern for it in items if it.get("da_index") is not None
+        ],
     )
 
 
@@ -345,19 +512,56 @@ def split_clips(
 # `configs/tapvid3d_baselines.yaml` are measured on these files.
 MINIVAL_FILES: dict[str, list[str]] = {
     "pstudio": [
-        "basketball_5.npz", "softball_25.npz", "boxes_22.npz", "boxes_19.npz",
-        "juggle_8.npz", "boxes_12.npz", "boxes_6.npz", "basketball_29.npz",
-        "tennis_28.npz", "tennis_22.npz", "basketball_9.npz", "basketball_24.npz",
-        "football_3.npz", "tennis_17.npz", "softball_21.npz", "tennis_23.npz",
-        "juggle_5.npz", "football_1.npz", "tennis_5.npz", "basketball_6.npz",
-        "basketball_14.npz", "football_21.npz", "football_19.npz", "basketball_4.npz",
-        "basketball_3.npz", "softball_2.npz", "boxes_11.npz", "juggle_4.npz",
-        "softball_23.npz", "juggle_7.npz", "football_16.npz", "boxes_29.npz",
-        "boxes_7.npz", "juggle_9.npz", "boxes_17.npz", "juggle_22.npz",
-        "football_29.npz", "football_22.npz", "boxes_28.npz", "tennis_2.npz",
-        "softball_9.npz", "basketball_13.npz", "tennis_4.npz", "football_7.npz",
-        "softball_19.npz", "basketball_20.npz", "tennis_26.npz", "softball_14.npz",
-        "boxes_5.npz", "boxes_27.npz",
+        "basketball_5.npz",
+        "softball_25.npz",
+        "boxes_22.npz",
+        "boxes_19.npz",
+        "juggle_8.npz",
+        "boxes_12.npz",
+        "boxes_6.npz",
+        "basketball_29.npz",
+        "tennis_28.npz",
+        "tennis_22.npz",
+        "basketball_9.npz",
+        "basketball_24.npz",
+        "football_3.npz",
+        "tennis_17.npz",
+        "softball_21.npz",
+        "tennis_23.npz",
+        "juggle_5.npz",
+        "football_1.npz",
+        "tennis_5.npz",
+        "basketball_6.npz",
+        "basketball_14.npz",
+        "football_21.npz",
+        "football_19.npz",
+        "basketball_4.npz",
+        "basketball_3.npz",
+        "softball_2.npz",
+        "boxes_11.npz",
+        "juggle_4.npz",
+        "softball_23.npz",
+        "juggle_7.npz",
+        "football_16.npz",
+        "boxes_29.npz",
+        "boxes_7.npz",
+        "juggle_9.npz",
+        "boxes_17.npz",
+        "juggle_22.npz",
+        "football_29.npz",
+        "football_22.npz",
+        "boxes_28.npz",
+        "tennis_2.npz",
+        "softball_9.npz",
+        "basketball_13.npz",
+        "tennis_4.npz",
+        "football_7.npz",
+        "softball_19.npz",
+        "basketball_20.npz",
+        "tennis_26.npz",
+        "softball_14.npz",
+        "boxes_5.npz",
+        "boxes_27.npz",
     ],
     "drivetrack": [
         "tapvid3d_9142545919543484617_86_000_106_000_2_5AKc-TYQochsSWXpv376cA.npz",
@@ -415,7 +619,8 @@ MINIVAL_FILES: dict[str, list[str]] = {
         "Lite_release_recognition_GreenDecorationTall_seq031_6.npz",
         "Apartment_release_meal_seq136_8.npz",
         "Lite_release_recognition_WoodenBowl_seq032_1.npz",
-        "Apartment_release_work_seq108_5.npz", "Apartment_release_decoration_seq138_6.npz",
+        "Apartment_release_work_seq108_5.npz",
+        "Apartment_release_decoration_seq138_6.npz",
         "Apartment_release_multiskeleton_party_seq122_5.npz",
         "Apartment_release_work_skeleton_seq138_5.npz",
         "Apartment_release_decoration_seq138_5.npz",
@@ -482,7 +687,9 @@ def minival_split(
     Raises if any minival file is missing on disk under `data_root/tapvid3d/<subset>/`.
     """
     if n_train + n_val + n_test > 50:
-        raise ValueError(f"n_train + n_val + n_test = {n_train + n_val + n_test} > 50 per subset")
+        raise ValueError(
+            f"n_train + n_val + n_test = {n_train + n_val + n_test} > 50 per subset"
+        )
     root = Path(data_root).expanduser()
     if root.name != "tapvid3d":
         root = root / "tapvid3d"
@@ -503,8 +710,8 @@ def minival_split(
                 f"first missing = {missing[0].name}"
             )
         train += paths[:n_train]
-        val   += paths[n_train : n_train + n_val]
-        test  += paths[n_train + n_val : n_train + n_val + n_test]
+        val += paths[n_train : n_train + n_val]
+        test += paths[n_train + n_val : n_train + n_val + n_test]
     return train, val, test
 
 
@@ -536,6 +743,7 @@ def filter_to_split(clips: list[Path], split: str) -> list[Path]:
     if split == "all":
         return clips
     from .tapvid3d_splits import FULL_EVAL_FILES, MINIVAL_FILES
+
     table = MINIVAL_FILES if split == "minival" else FULL_EVAL_FILES
     allow: set[str] = set()
     for names in table.values():
@@ -572,6 +780,7 @@ def official_train_test_split(
         (train_clips, test_clips) — sorted lists of .npz paths.
     """
     from .tapvid3d_splits import FULL_EVAL_FILES, MINIVAL_FILES
+
     root = Path(data_root).expanduser()
     if root.name != "tapvid3d":
         root = root / "tapvid3d"
@@ -580,6 +789,10 @@ def official_train_test_split(
     for sub in subsets:
         if sub not in FULL_EVAL_FILES or sub not in MINIVAL_FILES:
             raise ValueError(f"Subset {sub!r} not in official TAPVid-3D splits")
-        train += sorted(p for p in (root / sub / n for n in FULL_EVAL_FILES[sub]) if p.exists())
-        test  += sorted(p for p in (root / sub / n for n in MINIVAL_FILES[sub])   if p.exists())
+        train += sorted(
+            p for p in (root / sub / n for n in FULL_EVAL_FILES[sub]) if p.exists()
+        )
+        test += sorted(
+            p for p in (root / sub / n for n in MINIVAL_FILES[sub]) if p.exists()
+        )
     return train, test

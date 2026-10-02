@@ -120,12 +120,16 @@ def render_comparison(
 
     from mamba3_tracker.viz.track3d_axes import apply_equal_cube, apply_image_like_view
 
-    methods = ("old", "new", "onnx")
+    methods = ("old", "new", "onnx") + (
+        ("student",) if "student" in report["scores"] else ()
+    )
     names = (
         "OLD RELEASE / best200",
         "NEW RELEASE / best80",
         "NEW RELEASE / best80 ONNX",
-    )
+    ) + (("LIGHTWEIGHT / distilled refiner",) if "student" in methods else ())
+    columns = len(methods)
+    canvas_width = 640 * columns
     gt, vis = arrays["gt"], arrays["gt_visibility"]
     flow_vis, k = arrays["flow_visibility"], arrays["K"]
     selected = select_tracks(vis, count)
@@ -149,7 +153,7 @@ def render_comparison(
     font = ImageFont.truetype(font_path, 21)
     small = ImageFont.truetype(font_path, 18)
     title = ImageFont.truetype(font_path, 27)
-    fig = plt.figure(figsize=(19.2, 4.6), dpi=100, facecolor="#f8fafc")
+    fig = plt.figure(figsize=(canvas_width / 100, 4.6), dpi=100, facecolor="#f8fafc")
     fig.subplots_adjust(left=0.01, right=0.98, bottom=0.08, top=0.88, wspace=0.02)
     lines, detail_lines = [], []
 
@@ -166,7 +170,10 @@ def render_comparison(
     for column, key in enumerate(methods):
         ax = cast(
             Axes3D,
-            fig.add_axes((column / 3 + 0.103, 0.08, 0.218, 0.80), projection="3d"),
+            fig.add_axes(
+                ((column + 0.309) / columns, 0.08, 0.654 / columns, 0.80),
+                projection="3d",
+            ),
         )
         apply_equal_cube(ax, lims)
         apply_image_like_view(ax)
@@ -178,14 +185,16 @@ def render_comparison(
             dimension.label.set_text(label)
             dimension.label.set_fontsize(12)
         lines.append(add_tracks(ax))
-        detail = fig.add_axes((column / 3 + 0.013, 0.22, 0.105, 0.50), projection="3d")
+        detail = fig.add_axes(
+            ((column + 0.039) / columns, 0.22, 0.315 / columns, 0.50), projection="3d"
+        )
         apply_equal_cube(detail, detail_limits)
         apply_image_like_view(detail)
         detail.set_axis_off()
         detail.set_facecolor("#edf2f7")
         detail_lines.append(add_tracks(detail))
         fig.text(
-            column / 3 + 0.064,
+            (column + 0.192) / columns,
             0.15,
             f"GT-centred detail\nshared {detail_span:.2f} m cube\n(outside detail cropped)",
             ha="center",
@@ -205,7 +214,7 @@ def render_comparison(
         "-pix_fmt",
         "rgb24",
         "-s",
-        "1920x1080",
+        f"{canvas_width}x1080",
         "-r",
         str(fps),
         "-i",
@@ -232,15 +241,15 @@ def render_comparison(
         try:
             assert process.stdin is not None
             for frame in range(len(frames)):
-                canvas = Image.new("RGB", (1920, 1080), "#0f172a")
+                canvas = Image.new("RGB", (canvas_width, 1080), "#0f172a")
                 draw = ImageDraw.Draw(canvas)
                 label = f"{report['subset'].upper()} | {report['clip_id']}"
-                while title.getlength(label) > 1450:
+                while title.getlength(label) > canvas_width - 470:
                     label = label[:-4] + "..."
                 draw.text((22, 14), label, font=title, fill="#f8fafc")
                 draw.text(
-                    (1550, 18),
-                    f"FRAME {frame + 1:03d}/{len(frames):03d} | 15 fps",
+                    (canvas_width - 370, 18),
+                    f"FRAME {frame + 1:03d}/{len(frames):03d} | {fps} fps",
                     font=font,
                     fill="#f8fafc",
                 )
@@ -252,7 +261,13 @@ def render_comparison(
                     draw.text((x + 20, 68), names[column], font=font, fill="#7dd3fc")
                     draw.text(
                         (x + 20, 97),
-                        "CUDA / BF16 mixer" if key != "onnx" else "CPU / FP32 refiner",
+                        "CUDA / FP32 lightweight"
+                        if key == "student"
+                        else (
+                            "CPU / FP32 refiner"
+                            if key == "onnx"
+                            else "CUDA / BF16 mixer"
+                        ),
                         font=small,
                         fill="#cbd5e1",
                     )
@@ -382,6 +397,9 @@ def render_comparison(
                 process.wait()
             plt.close(fig)
     return {
+        "methods": list(methods),
+        "width": canvas_width,
+        "height": 1080,
         "selected_track_ids": selected.tolist(),
         "shared_cube_m": lims.tolist(),
         "shared_gt_detail_cube_m": detail_limits.tolist(),

@@ -1,0 +1,463 @@
+{
+  "identity": {
+    "checkpoint_sha256": "16ec743e3a46c00a7bffd77db83862a8037a09fbc8ecc52e586d3c1d60761ada",
+    "teacher_sha256": "c022511872c2d59a39bc1c39a3c62f44c142ee8ff9ca7dc7859881a78ae490b7",
+    "inputs_sha256": "dd098efa28ab7cc644d84eb876db7e8e083cb829984ad6591ab4661e99269af5",
+    "config_sha256": "0ef477df728ae01dbf5d218f7d6379a284986fd0507e56f9532bc41eab9d7056",
+    "partition": "monitor",
+    "onnx_sha256": null
+  },
+  "status": "complete",
+  "rows": [
+    {
+      "subset": "pstudio",
+      "filename": "boxes_21.npz",
+      "sequence": "pstudio/boxes",
+      "frames": 150,
+      "tracks": 460,
+      "teacher": {
+        "average_jaccard": 0.23084309781337947,
+        "average_pts_within_thresh": 0.32280964797913947,
+        "occlusion_accuracy": 0.9117971014492754,
+        "metric_average_jaccard": 0.5727921002391452,
+        "metric_average_pts_within_thresh": 0.67245110821382,
+        "metric_err_mean_m": 0.09616934508085251,
+        "metric_err_median_m": 0.04410728067159653
+      },
+      "student": {
+        "average_jaccard": 0.23180625061516363,
+        "average_pts_within_thresh": 0.3245599739243807,
+        "occlusion_accuracy": 0.9117971014492754,
+        "metric_average_jaccard": 0.21467138501652389,
+        "metric_average_pts_within_thresh": 0.2648109517601043,
+        "metric_err_mean_m": 0.7337639331817627,
+        "metric_err_median_m": 0.6740435361862183
+      },
+      "student_onnx_error": null,
+      "predictions_sha256": "49dcf64a7ec3723ef4e063df86578cb2109dea0ba6a56d13324484cc7ce91c94"
+    },
+    {
+      "subset": "pstudio",
+      "filename": "juggle_6.npz",
+      "sequence": "pstudio/juggle",
+      "frames": 150,
+      "tracks": 287,
+      "teacher": {
+        "average_jaccard": 0.17383575544199203,
+        "average_pts_within_thresh": 0.23073393271616469,
+        "occlusion_accuracy": 0.6655284552845528,
+        "metric_average_jaccard": 0.24103134264875506,
+        "metric_average_pts_within_thresh": 0.42446975962436306,
+        "metric_err_mean_m": 0.418477326631546,
+        "metric_err_median_m": 0.39552804827690125
+      },
+      "student": {
+        "average_jaccard": 0.16634754930457918,
+        "average_pts_within_thresh": 0.2535122588906972,
+        "occlusion_accuracy": 0.6655284552845528,
+        "metric_average_jaccard": 0.11925522934334747,
+        "metric_average_pts_within_thresh": 0.1970493290291599,
+        "metric_err_mean_m": 1.4908372163772583,
+        "metric_err_median_m": 1.4464157819747925
+      },
+      "student_onnx_error": null,
+      "predictions_sha256": "f3f1352240803302296e8707af3b183a8af5779cc631ed5fc06d373651bb1463"
+    },
+    {
+      "subset": "pstudio",
+      "filename": "boxes_18.npz",
+      "sequence": "pstudio/boxes",
+      "frames": 150,
+      "tracks": 330,
+      "teacher": {
+        "average_jaccard": 0.09716747141353932,
+        "average_pts_within_thresh": 0.15646147384141504,
+        "occlusion_accuracy": 0.8293131313131313,
+        "metric_average_jaccard": 0.26593448768213823,
+        "metric_average_pts_within_thresh": 0.33849815653147897,
+        "metric_err_mean_m": 0.5706079006195068,
+        "metric_err_median_m": 0.42826104164123535
+      },
+      "student": {
+        "average_jaccard": 0.07765699893274922,
+        "average_pts_within_thresh": 0.1313249638306809,
+        "occlusion_accuracy": 0.8293131313131313,
+        "metric_average_jaccard": 0.21403954560675692,
+        "metric_average_pts_within_thresh": 0.29673776076912306,
+        "metric_err_mean_m": 0.9580435752868652,
+        "metric_err_median_m": 0.6634471416473389
+      },
+      "student_onnx_error": null,
+      "predictions_sha256": "662146e604aa80910a75b1aa79944e210e3db6b0dbf09b165f86354de88c7b44"
+    },
+    {
+      "subset": "pstudio",
+      "filename": "boxes_3.npz",
+      "sequence": "pstudio/boxes",
+      "frames": 150,
+      "tracks": 355,
+      "teacher": {
+        "average_jaccard": 0.12072048836037237,
+        "average_pts_within_thresh": 0.1860014542725119,
+        "occlusion_accuracy": 0.8246948356807512,
+        "metric_average_jaccard": 0.35100129493638654,
+        "metric_average_pts_within_thresh": 0.47449159102104,
+        "metric_err_mean_m": 0.30085289478302,
+        "metric_err_median_m": 0.1873452365398407
+      },
+      "student": {
+        "average_jaccard": 0.1360847415212441,
+        "average_pts_within_thresh": 0.21044730607745174,
+        "occlusion_accuracy": 0.8246948356807512,
+        "metric_average_jaccard": 0.1551604007722606,
+        "metric_average_pts_within_thresh": 0.21158726807871836,
+        "metric_err_mean_m": 1.1170234680175781,
+        "metric_err_median_m": 1.08057701587677
+      },
+      "student_onnx_error": null,
+      "predictions_sha256": "d53a43d8f39207072c348721d23b6af8207c7106a77a3028d1492ae9a059fd84"
+    },
+    {
+      "subset": "pstudio",
+      "filename": "basketball_21.npz",
+      "sequence": "pstudio/basketball",
+      "frames": 150,
+      "tracks": 251,
+      "teacher": {
+        "average_jaccard": 0.1522876170907411,
+        "average_pts_within_thresh": 0.19949011317000373,
+        "occlusion_accuracy": 0.6864541832669323,
+        "metric_average_jaccard": 0.3711275790538449,
+        "metric_average_pts_within_thresh": 0.5182066907101107,
+        "metric_err_mean_m": 0.2889840602874756,
+        "metric_err_median_m": 0.12947887182235718
+      },
+      "student": {
+        "average_jaccard": 0.15579115003414923,
+        "average_pts_within_thresh": 0.21400945156075118,
+        "occlusion_accuracy": 0.6864541832669323,
+        "metric_average_jaccard": 0.13126958213900394,
+        "metric_average_pts_within_thresh": 0.23734610123119015,
+        "metric_err_mean_m": 0.8844847679138184,
+        "metric_err_median_m": 0.8118482828140259
+      },
+      "student_onnx_error": null,
+      "predictions_sha256": "e5ec58ba526b7a979c453b948a53e26e78ad8c8a001bbf507380aa7d6597006e"
+    },
+    {
+      "subset": "drivetrack",
+      "filename": "tapvid3d_2739239662326039445_5890_320_5910_320_2_9c_GVNEfaFivtmm6v34DtQ.npz",
+      "sequence": "drivetrack/2739239662326039445",
+      "frames": 31,
+      "tracks": 256,
+      "teacher": {
+        "average_jaccard": 0.029265607556944007,
+        "average_pts_within_thresh": 0.05447916666666667,
+        "occlusion_accuracy": 0.9421622983870968,
+        "metric_average_jaccard": 0.15434826932406237,
+        "metric_average_pts_within_thresh": 0.21833333333333335,
+        "metric_err_mean_m": 2.4104487895965576,
+        "metric_err_median_m": 1.1295697689056396
+      },
+      "student": {
+        "average_jaccard": 0.02630244263963146,
+        "average_pts_within_thresh": 0.049453125,
+        "occlusion_accuracy": 0.9421622983870968,
+        "metric_average_jaccard": 0.13619904259456692,
+        "metric_average_pts_within_thresh": 0.19479166666666664,
+        "metric_err_mean_m": 2.592665910720825,
+        "metric_err_median_m": 1.2427983283996582
+      },
+      "student_onnx_error": null,
+      "predictions_sha256": "16db89753de637cc6b0ae5dda22c9883818ab5d3540c6a167ece1d5da31e009e"
+    },
+    {
+      "subset": "drivetrack",
+      "filename": "tapvid3d_16608525782988721413_100_000_120_000_1_WM1bSCxbe-lfC2QsJyHNJg.npz",
+      "sequence": "drivetrack/16608525782988721413",
+      "frames": 75,
+      "tracks": 256,
+      "teacher": {
+        "average_jaccard": 0.12083710746908602,
+        "average_pts_within_thresh": 0.20846838621319336,
+        "occlusion_accuracy": 0.911875,
+        "metric_average_jaccard": 0.1515842227047013,
+        "metric_average_pts_within_thresh": 0.22620406299931523,
+        "metric_err_mean_m": 2.457094430923462,
+        "metric_err_median_m": 1.1509528160095215
+      },
+      "student": {
+        "average_jaccard": 0.10840694552248223,
+        "average_pts_within_thresh": 0.18902077151335311,
+        "occlusion_accuracy": 0.911875,
+        "metric_average_jaccard": 0.10459045878230158,
+        "metric_average_pts_within_thresh": 0.165784067564483,
+        "metric_err_mean_m": 3.107611894607544,
+        "metric_err_median_m": 1.5631568431854248
+      },
+      "student_onnx_error": null,
+      "predictions_sha256": "ca45ff1c0ea9e43f2ed64a36d77731593789cd5793330daf45926478979455d2"
+    },
+    {
+      "subset": "drivetrack",
+      "filename": "tapvid3d_1773696223367475365_1060_000_1080_000_1_CdvJMungycUAsKAycsjudQ.npz",
+      "sequence": "drivetrack/1773696223367475365",
+      "frames": 80,
+      "tracks": 256,
+      "teacher": {
+        "average_jaccard": 0.1769787353984058,
+        "average_pts_within_thresh": 0.26848803498599577,
+        "occlusion_accuracy": 0.992431640625,
+        "metric_average_jaccard": 0.18548844400847017,
+        "metric_average_pts_within_thresh": 0.24843005257726897,
+        "metric_err_mean_m": 1.5926034450531006,
+        "metric_err_median_m": 0.9269687533378601
+      },
+      "student": {
+        "average_jaccard": 0.2011565972205168,
+        "average_pts_within_thresh": 0.2970959658002064,
+        "occlusion_accuracy": 0.992431640625,
+        "metric_average_jaccard": 0.07611553199276243,
+        "metric_average_pts_within_thresh": 0.11764532455407598,
+        "metric_err_mean_m": 3.1995997428894043,
+        "metric_err_median_m": 2.5298068523406982
+      },
+      "student_onnx_error": null,
+      "predictions_sha256": "c22d745ea69781e152883c2f8f3a5e94a172fd2d4a394658d2e1b1f0b2e521ae"
+    },
+    {
+      "subset": "drivetrack",
+      "filename": "tapvid3d_14964691552976940738_2219_229_2239_229_1_sAyn9ccaJYUUgWCNb5bvFg.npz",
+      "sequence": "drivetrack/14964691552976940738",
+      "frames": 70,
+      "tracks": 256,
+      "teacher": {
+        "average_jaccard": 0.2522149755861987,
+        "average_pts_within_thresh": 0.35176296633303006,
+        "occlusion_accuracy": 0.9773995535714286,
+        "metric_average_jaccard": 0.21372721298872407,
+        "metric_average_pts_within_thresh": 0.2781619654231119,
+        "metric_err_mean_m": 1.9686049222946167,
+        "metric_err_median_m": 0.7339859008789062
+      },
+      "student": {
+        "average_jaccard": 0.24343707934181963,
+        "average_pts_within_thresh": 0.34226569608735213,
+        "occlusion_accuracy": 0.9773995535714286,
+        "metric_average_jaccard": 0.21932314702504155,
+        "metric_average_pts_within_thresh": 0.2866924476797088,
+        "metric_err_mean_m": 1.863710880279541,
+        "metric_err_median_m": 0.7138341665267944
+      },
+      "student_onnx_error": null,
+      "predictions_sha256": "d8a5febe0928d1e12492908a106ec6b5dbac47c20f5929d5736d2a2c5e1b6043"
+    },
+    {
+      "subset": "drivetrack",
+      "filename": "tapvid3d_5592790652933523081_667_770_687_770_2_-xisZa3_U7rg17b-_7SkVg.npz",
+      "sequence": "drivetrack/5592790652933523081",
+      "frames": 42,
+      "tracks": 256,
+      "teacher": {
+        "average_jaccard": 0.09836306650074336,
+        "average_pts_within_thresh": 0.12858472998137804,
+        "occlusion_accuracy": 0.6022135416666666,
+        "metric_average_jaccard": 0.05399891130350161,
+        "metric_average_pts_within_thresh": 0.06945996275605215,
+        "metric_err_mean_m": 6.929731845855713,
+        "metric_err_median_m": 4.55649995803833
+      },
+      "student": {
+        "average_jaccard": 0.1025577541945339,
+        "average_pts_within_thresh": 0.13151769087523277,
+        "occlusion_accuracy": 0.6022135416666666,
+        "metric_average_jaccard": 0.10601030437496824,
+        "metric_average_pts_within_thresh": 0.13033054003724395,
+        "metric_err_mean_m": 4.634975910186768,
+        "metric_err_median_m": 3.339594841003418
+      },
+      "student_onnx_error": null,
+      "predictions_sha256": "1b30749f30a6733b032badb342708c63c374e82b3929cfa6084c064b285167b1"
+    },
+    {
+      "subset": "adt",
+      "filename": "Apartment_release_multiuser_cook_seq143_0.npz",
+      "sequence": "adt/Apartment_release_multiuser_cook_seq143",
+      "frames": 300,
+      "tracks": 900,
+      "teacher": {
+        "average_jaccard": 0.22229854656388567,
+        "average_pts_within_thresh": 0.36905630262160327,
+        "occlusion_accuracy": 0.7799481481481482,
+        "metric_average_jaccard": 0.3588094955554369,
+        "metric_average_pts_within_thresh": 0.573445592753681,
+        "metric_err_mean_m": 0.19784294068813324,
+        "metric_err_median_m": 0.09412989765405655
+      },
+      "student": {
+        "average_jaccard": 0.21792393193253595,
+        "average_pts_within_thresh": 0.36790710665975024,
+        "occlusion_accuracy": 0.7799481481481482,
+        "metric_average_jaccard": 0.35777758388205816,
+        "metric_average_pts_within_thresh": 0.5729077051993137,
+        "metric_err_mean_m": 0.21338483691215515,
+        "metric_err_median_m": 0.09143102914094925
+      },
+      "student_onnx_error": null,
+      "predictions_sha256": "9488429168948319e461b2d78ab228b313605eefb8905d999bac5b5dd4331f9d"
+    },
+    {
+      "subset": "adt",
+      "filename": "Apartment_release_multiuser_cook_seq145_4.npz",
+      "sequence": "adt/Apartment_release_multiuser_cook_seq145",
+      "frames": 300,
+      "tracks": 635,
+      "teacher": {
+        "average_jaccard": 0.14090958108563703,
+        "average_pts_within_thresh": 0.21107899284701287,
+        "occlusion_accuracy": 0.6699475065616798,
+        "metric_average_jaccard": 0.2539891352971721,
+        "metric_average_pts_within_thresh": 0.4451064423382441,
+        "metric_err_mean_m": 0.5098766684532166,
+        "metric_err_median_m": 0.2520957887172699
+      },
+      "student": {
+        "average_jaccard": 0.15739595630564432,
+        "average_pts_within_thresh": 0.2475026542774553,
+        "occlusion_accuracy": 0.6699475065616798,
+        "metric_average_jaccard": 0.2789904087004815,
+        "metric_average_pts_within_thresh": 0.47698257089051976,
+        "metric_err_mean_m": 0.4509342312812805,
+        "metric_err_median_m": 0.18714112043380737
+      },
+      "student_onnx_error": null,
+      "predictions_sha256": "dfd4984c2913ad172b268eca7e2ac8f07bdbc883fe288a0ac11af45f35157a24"
+    },
+    {
+      "subset": "adt",
+      "filename": "Apartment_release_meal_skeleton_seq135_8.npz",
+      "sequence": "adt/Apartment_release_meal_skeleton_seq135",
+      "frames": 300,
+      "tracks": 566,
+      "teacher": {
+        "average_jaccard": 0.2167559330855382,
+        "average_pts_within_thresh": 0.2919121084618981,
+        "occlusion_accuracy": 0.7286513545347467,
+        "metric_average_jaccard": 0.33768731230911686,
+        "metric_average_pts_within_thresh": 0.49878006827383625,
+        "metric_err_mean_m": 0.32798802852630615,
+        "metric_err_median_m": 0.14834462106227875
+      },
+      "student": {
+        "average_jaccard": 0.23330684873081237,
+        "average_pts_within_thresh": 0.3192234071643424,
+        "occlusion_accuracy": 0.7286513545347467,
+        "metric_average_jaccard": 0.28824891807806796,
+        "metric_average_pts_within_thresh": 0.4546102481321725,
+        "metric_err_mean_m": 0.3263922333717346,
+        "metric_err_median_m": 0.2194901406764984
+      },
+      "student_onnx_error": null,
+      "predictions_sha256": "db031e04d0ef7fe8a51f5bd01c0ad55200dd067889056ad5c14fcdc2b8c69f2e"
+    },
+    {
+      "subset": "adt",
+      "filename": "Apartment_release_clean_seq141_1.npz",
+      "sequence": "adt/Apartment_release_clean_seq141",
+      "frames": 300,
+      "tracks": 884,
+      "teacher": {
+        "average_jaccard": 0.1904068182953643,
+        "average_pts_within_thresh": 0.2913233446471769,
+        "occlusion_accuracy": 0.7917873303167421,
+        "metric_average_jaccard": 0.3124534096777857,
+        "metric_average_pts_within_thresh": 0.5003112869653272,
+        "metric_err_mean_m": 0.3399848937988281,
+        "metric_err_median_m": 0.13676805794239044
+      },
+      "student": {
+        "average_jaccard": 0.17727376057812544,
+        "average_pts_within_thresh": 0.2880042004988092,
+        "occlusion_accuracy": 0.7917873303167421,
+        "metric_average_jaccard": 0.32551382609829344,
+        "metric_average_pts_within_thresh": 0.5269732030678643,
+        "metric_err_mean_m": 0.29705727100372314,
+        "metric_err_median_m": 0.12591171264648438
+      },
+      "student_onnx_error": null,
+      "predictions_sha256": "d337659a256801c78f88d5414ef9dafc7475c1805d888553251dc3b27e8c0f86"
+    },
+    {
+      "subset": "adt",
+      "filename": "Apartment_release_multiuser_party_seq135_10.npz",
+      "sequence": "adt/Apartment_release_multiuser_party_seq135",
+      "frames": 300,
+      "tracks": 229,
+      "teacher": {
+        "average_jaccard": 0.012014083318890588,
+        "average_pts_within_thresh": 0.021465527614005536,
+        "occlusion_accuracy": 0.8535371179039302,
+        "metric_average_jaccard": 0.19801993728957806,
+        "metric_average_pts_within_thresh": 0.38193959812296957,
+        "metric_err_mean_m": 0.8634372353553772,
+        "metric_err_median_m": 0.32336074113845825
+      },
+      "student": {
+        "average_jaccard": 0.00932122770544221,
+        "average_pts_within_thresh": 0.02109252797497293,
+        "occlusion_accuracy": 0.8535371179039302,
+        "metric_average_jaccard": 0.2194163117625092,
+        "metric_average_pts_within_thresh": 0.45294188424978943,
+        "metric_err_mean_m": 0.6901965737342834,
+        "metric_err_median_m": 0.15904536843299866
+      },
+      "student_onnx_error": null,
+      "predictions_sha256": "6961cb9300aa5e03b0aaae66d2881c8ae80c36f4e3415bc62f46b768d9297d8b"
+    }
+  ],
+  "expected": 15,
+  "scope": "known_sequence_overlap_not_blind",
+  "student_execution": "torch_fp32",
+  "summary": {
+    "teacher": {
+      "per_subset": {
+        "adt": {
+          "average_jaccard": 0.15647699246986316,
+          "metric_average_jaccard": 0.29219185802581793
+        },
+        "drivetrack": {
+          "average_jaccard": 0.1355318985022756,
+          "metric_average_jaccard": 0.1518294120658919
+        },
+        "pstudio": {
+          "average_jaccard": 0.15497088602400488,
+          "metric_average_jaccard": 0.36037736091205397
+        }
+      },
+      "macro": {
+        "average_jaccard": 0.14899325899871455,
+        "metric_average_jaccard": 0.2681328770012546
+      }
+    },
+    "student": {
+      "per_subset": {
+        "adt": {
+          "average_jaccard": 0.15904434505051204,
+          "metric_average_jaccard": 0.293989409704282
+        },
+        "drivetrack": {
+          "average_jaccard": 0.13637216378379682,
+          "metric_average_jaccard": 0.12844769695392816
+        },
+        "pstudio": {
+          "average_jaccard": 0.15353733808157705,
+          "metric_average_jaccard": 0.16687922857557858
+        }
+      },
+      "macro": {
+        "average_jaccard": 0.1496512823052953,
+        "metric_average_jaccard": 0.1964387784112629
+      }
+    }
+  }
+}

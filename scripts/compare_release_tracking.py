@@ -1,4 +1,4 @@
-"""Desktop old/new/ONNX comparison, strictly on a predeclared validation manifest.
+"""Desktop release/student comparison on a predeclared validation manifest.
 
 This is not the fixed-nine acceptance protocol or the 150-clip official minival.
 Stages separate GPU prediction, CPU rendering, and independent media auditing.
@@ -31,7 +31,45 @@ from mamba3_tracker.viz.comparison import render_comparison
 
 ROOT = Path(__file__).resolve().parents[1]
 DEFAULT_OUTPUT = ROOT.parent / "tracking_comparison_20261002"
+DEFAULT_STUDENT_OUTPUT = ROOT.parent / "tracking_comparison_kd_20261002"
 METHODS = ("old", "new", "onnx")
+
+
+def comparison_methods(manifest: dict[str, Any]) -> tuple[str, ...]:
+    return (*METHODS, "student") if "student_checkpoint" in manifest else METHODS
+
+
+def prepare_student_manifest(
+    output: Path, base: Path, checkpoint: Path, digest: str | None
+):
+    if output == base:
+        raise ValueError("Student mode requires a separate output directory")
+    manifest = read_manifest(base)
+    if "student_checkpoint" in manifest:
+        raise ValueError("Base directory must contain the original release comparison")
+    checkpoint = checkpoint.resolve(strict=True)
+    actual = sha256(checkpoint)
+    if digest is not None and digest != actual:
+        raise ValueError("Student checkpoint SHA256 mismatch")
+    from mamba3_tracker.deployment.student_checkpoint import load_student
+
+    student = load_student(checkpoint, actual)
+    manifest.update(
+        comparison_mode="with-student",
+        student_checkpoint=str(checkpoint),
+        student_sha256=actual,
+        student_architecture=student.architecture,
+        student_parameters=sum(p.numel() for p in student.parameters()),
+        base_manifest_sha256=sha256(base / "manifest.json"),
+    )
+    path = output / "manifest.json"
+    if path.exists() and json.loads(path.read_text()) != manifest:
+        raise ValueError(
+            "Output belongs to another student/model/input; choose a new --out-dir"
+        )
+    if not path.exists():
+        write_json(path, manifest)
+    return manifest
 
 
 def write_json(path: Path, value: Any) -> None:
@@ -70,6 +108,11 @@ def read_manifest(output: Path) -> dict[str, Any]:
     ):
         if sha256(ROOT / manifest[key]) != manifest[digest]:
             raise ValueError(f"Model SHA256 mismatch: {key}")
+    if (
+        "student_checkpoint" in manifest
+        and sha256(Path(manifest["student_checkpoint"])) != manifest["student_sha256"]
+    ):
+        raise ValueError("Student checkpoint SHA256 mismatch")
     return manifest
 
 
@@ -161,9 +204,10 @@ def build_models(manifest: dict[str, Any]):
 class ThreeWayRefiner(nn.Module):
     """Single set of frontend arguments; one DINO extraction; no independent masks."""
 
-    def __init__(self, old, paired):
+    def __init__(self, old, paired, student=None):
         super().__init__()
         self.old, self.paired = old, paired
+        self.student = student
         self.outputs: dict[str, list[np.ndarray]] = {}
         self.inputs: dict[str, Any] = {}
         self.dino_calls = 0
@@ -196,6 +240,31 @@ class ThreeWayRefiner(nn.Module):
             "new": self.paired.last_native,
             "onnx": self.paired.last_onnx,
         }
+        if self.student is not None:
+            from mamba3_tracker.model.onnx_refiner import reference_depth
+
+            values = (
+                ray,
+                z_raw,
+                vis,
+                uv,
+                depth_map,
+                features[0],
+                k,
+                reference_depth(z_raw),
+            )
+            parts = []
+            for start in range(0, ray.shape[2], 32):
+                chunk = [
+                    v[:, :, start : start + 32] if i < 4 else v
+                    for i, v in enumerate(values)
+                ]
+                parts.append(
+                    [v.detach().float().cpu().numpy() for v in self.student(*chunk)]
+                )
+            self.outputs["student"] = [
+                np.concatenate([p[i] for p in parts], axis=2) for i in range(4)
+            ]
         for name, value in zip(
             ("ray", "z_raw", "flow_visibility", "uv", "depth", "images", "K", "dino"),
             (ray, z_raw, vis, uv, depth_map, images, k, features[0]),
@@ -224,7 +293,23 @@ def infer(output: Path, manifest: dict[str, Any], subset: str) -> None:
     torch.set_num_threads(manifest["threads"])
     entry = next(c for c in manifest["clips"] if c["subset"] == subset)
     old, paired, flow_config, audit = build_models(manifest)
-    combined = ThreeWayRefiner(old, paired).eval()
+    student = None
+    if "student_checkpoint" in manifest:
+        from mamba3_tracker.deployment.student_checkpoint import load_student
+
+        student = (
+            load_student(
+                Path(manifest["student_checkpoint"]), manifest["student_sha256"]
+            )
+            .cuda()
+            .eval()
+        )
+        audit["student"] = {
+            "architecture": student.architecture,
+            "parameters": sum(p.numel() for p in student.parameters()),
+            "checkpoint_sha256": manifest["student_sha256"],
+        }
+    combined = ThreeWayRefiner(old, paired, student).eval()
     flow = _build_waft_flow(
         torch.device("cuda"), scale=flow_config["scale"], iters=flow_config["iters"]
     )
@@ -309,6 +394,9 @@ def infer(output: Path, manifest: dict[str, Any], subset: str) -> None:
         "gpu": torch.cuda.get_device_name(0),
         "gpu_peak_allocated_mib": torch.cuda.max_memory_allocated() / 1024**2,
     }
+    if student is not None:
+        report["student_sha256"] = manifest["student_sha256"]
+        report["precision"]["student"] = "CUDA FP32 lightweight refiner"
     write_json(output / "reports" / f"{subset}.json", report)
     print(f"[infer] saved {prediction}; {report['elapsed_s']:.1f} s", flush=True)
 
@@ -320,6 +408,14 @@ def load_prediction(output: Path, subset: str):
         "prediction_sha256"
     ] != sha256(prediction):
         raise ValueError("Cached prediction or manifest provenance changed")
+    manifest = json.loads((output / "manifest.json").read_text())
+    if set(report["scores"]) != set(comparison_methods(manifest)):
+        raise ValueError("Prediction methods differ from manifest; rerun infer")
+    if (
+        "student_checkpoint" in manifest
+        and report.get("student_sha256") != manifest["student_sha256"]
+    ):
+        raise ValueError("Student prediction/checkpoint provenance mismatch")
     with np.load(prediction) as data:
         arrays = {key: data[key] for key in data.files}
     return arrays, report
@@ -418,7 +514,14 @@ def audit(output: Path, manifest: dict[str, Any]) -> None:
             stream["height"],
             stream["r_frame_rate"],
             int(stream["nb_read_frames"]),
-        ) != ("h264", "yuv420p", 1920, 1080, "15/1", frames):
+        ) != (
+            "h264",
+            "yuv420p",
+            640 * len(comparison_methods(manifest)),
+            1080,
+            f"{manifest['render']['fps']}/1",
+            frames,
+        ):
             raise ValueError(f"Invalid media properties: {filename}")
         subprocess.run(
             ["ffmpeg", "-v", "error", "-xerror", "-i", str(path), "-f", "null", "-"],
@@ -442,7 +545,7 @@ def audit(output: Path, manifest: dict[str, Any]) -> None:
                 metric: float(np.mean([row["scores"][key][metric] for row in rows]))
                 for metric in rows[0]["scores"][key]
             }
-            for key in METHODS
+            for key in comparison_methods(manifest)
         },
         "official_full_minival_evaluated": False,
         "media": media,
@@ -477,23 +580,72 @@ def audit(output: Path, manifest: dict[str, Any]) -> None:
             "repo rootから（GPU推論時はbashrcを秘密非表示でsourceし、scripts/cudnn_env.shをsource）:\n\n```sh\nuv run python scripts/compare_release_tracking.py --stage infer --subset pstudio\nuv run python scripts/compare_release_tracking.py --stage infer --subset drivetrack\nuv run python scripts/compare_release_tracking.py --stage infer --subset adt\nuv run python scripts/compare_release_tracking.py --stage render\nuv run python scripts/compare_release_tracking.py --stage audit\n```\n",
         ]
     )
+    if "student_checkpoint" in manifest:
+        lines = [
+            "# Releaseと軽量refinerの4列比較\n\n",
+            "左から旧best200 / 新best80 native / 新best80 ONNX CPU / 軽量refiner CUDA FP32。予測=実線、GT=破線、全列で同一点ID・同色・同一前処理とflow visibility・共有メートル軸を使用。\n\n",
+            f"軽量モデル: `{manifest['student_architecture']}`、{manifest['student_parameters']:,} parameters。checkpoint SHA256: `{manifest['student_sha256']}`。\n\n",
+            "全フレーム・全クエリで評価する。validation選択動画であり、独立テスト/公式minivalではない。3D表示は各フレームのカメラ座標で、予測を列別に拡大縮小しない。軽量refinerはPyTorch FP32であり、ここでは軽量モデルのONNX数値一致を検証していない。\n\n",
+            "| 動画 | フレーム/点数 | 旧metric-AJ | 新metric-AJ | ONNX metric-AJ | 軽量metric-AJ |\n",
+            "| :--- | ---: | ---: | ---: | ---: | ---: |\n",
+        ]
+        for row in rows:
+            scores = " | ".join(
+                f"{row['scores'][key]['metric_average_jaccard']:.5f}"
+                for key in comparison_methods(manifest)
+            )
+            lines.append(
+                f"| {row['subset']} | {row['frames']} / {row['tracks']} | {scores} |\n"
+            )
+        lines.append(
+            "\n`comparison_all.mp4`は今回audit対象のsubsetのみを連結。各subset動画、manifest、predictions、reports、共有表示軸とsnapshotも同じフォルダに保存。全3本を生成するにはREADME.mdのwith-student手順を実行する。\n"
+        )
     (output / "README.md").write_text("".join(lines))
     print(
-        "[audit] four H264/yuv420p videos, 481 frames total, full decoding PASSED",
+        f"[audit] {len(files)} H264/yuv420p videos, {sum(c['frames'] for c in manifest['clips'])} clip frames, full decoding PASSED",
         flush=True,
     )
 
 
 def main() -> int:
     parser = argparse.ArgumentParser(description=__doc__)
-    parser.add_argument("--out-dir", type=Path, default=DEFAULT_OUTPUT)
+    parser.add_argument("--out-dir", type=Path)
+    parser.add_argument(
+        "--mode", choices=("release", "with-student"), default="release"
+    )
+    parser.add_argument("--base-dir", type=Path, default=DEFAULT_OUTPUT)
+    parser.add_argument("--student-checkpoint", type=Path)
+    parser.add_argument("--student-sha256")
     parser.add_argument("--stage", choices=("infer", "render", "audit"), required=True)
     parser.add_argument("--subset", choices=("pstudio", "drivetrack", "adt"))
     args = parser.parse_args()
     if args.stage == "infer" and args.subset is None:
         parser.error("infer requires an explicit --subset")
-    output = args.out_dir.resolve()
-    manifest = read_manifest(output)
+    output = (
+        args.out_dir
+        or (DEFAULT_STUDENT_OUTPUT if args.mode == "with-student" else DEFAULT_OUTPUT)
+    ).resolve()
+    if args.mode == "release" and (args.student_checkpoint or args.student_sha256):
+        parser.error("student arguments require --mode with-student")
+    if args.mode == "with-student" and args.student_checkpoint is not None:
+        manifest = prepare_student_manifest(
+            output,
+            args.base_dir.resolve(),
+            args.student_checkpoint,
+            args.student_sha256,
+        )
+    else:
+        if args.mode == "with-student" and not (output / "manifest.json").exists():
+            parser.error("first student run requires --student-checkpoint")
+        if args.student_sha256 is not None:
+            parser.error("--student-sha256 requires --student-checkpoint")
+        manifest = read_manifest(output)
+    if ("student_checkpoint" in manifest) != (args.mode == "with-student"):
+        parser.error("--mode differs from the output manifest")
+    if args.subset is not None and args.stage != "infer":
+        manifest = dict(
+            manifest, clips=[c for c in manifest["clips"] if c["subset"] == args.subset]
+        )
     if args.stage == "infer":
         infer(output, manifest, args.subset)
     elif args.stage == "render":

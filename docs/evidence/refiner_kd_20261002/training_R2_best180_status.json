@@ -1,0 +1,225 @@
+{
+  "status": "complete",
+  "identity": {
+    "teacher": "c022511872c2d59a39bc1c39a3c62f44c142ee8ff9ca7dc7859881a78ae490b7",
+    "split": "1557b93e38cfd64825a67de8436b1e4322d37ad83c0422b149d9403ec2d0e5d5",
+    "config": "5e892defe003be530177b8b9121149f08de840d30610929e1a61ed532b8412b6",
+    "input_manifest": "cd736ef90f99ac013a8357cbcbec5ffb6388e331d0fd9c5dfeb513c7961cf04c",
+    "monitor_manifest": "36d739f0082400618dedfe17dd5925d72e599002df125ccfa309011596515442",
+    "seed": 42,
+    "mode": "pilot",
+    "method": "staged",
+    "early_stopping_enabled": true,
+    "architecture": "vssd_local_global_128x2_v2_train",
+    "microbatch": 32,
+    "effective_batch": 32,
+    "processed_clip_limit": 20000,
+    "window": 16,
+    "query_policy": "strict_visible_gt_reanchor_v1",
+    "frontend_precision": "fp32",
+    "initial_student": "b4db0e2eca0147382a15eba352868029ccfa1a787b183b94a6aa7df3e4c4ac50",
+    "source_sha256": {
+      "scripts/train_refiner_staged.py": "f3fce6dbfd01059ff6476f64dd1bcac096bbe9768780a5c26a99f77a5003fd65",
+      "scripts/train_refiner_kd.py": "33c0622bc9abb9ea7974abf1008c2958eeb5e0fa8a50b2b48892ce24160af23b",
+      "scripts/prepare_refiner_kd.py": "ec4375084aaa6b493514afdc47ccc37a74eb9d478f80e8bd3f30c93d48eb7db3",
+      "src/mamba3_tracker/data/dataset.py": "c52147b5b97e93bebd39fffc2dc2fba08eb9cc8f842d771945831662173c1e54",
+      "src/mamba3_tracker/train/staged_distillation.py": "d40e3b548aa21cdc931886aa779c08387be69e831203af6a085ddb4b051e7457",
+      "src/mamba3_tracker/train/distillation.py": "a01d6ece02e33da08944a851dd6feab5fa77d50d263e1edd1a74bedf8315d46a",
+      "src/mamba3_tracker/model/student_refiner.py": "8efb6e059509941ff48ed601a29cfd78f9bc297a38bc2078c1177a0151aaebce",
+      "src/mamba3_tracker/model/onnx_refiner.py": "d4b512de3b16ebb6f459bdec14ce9dacdc4072924761074155f3f3dc0bb74c0b",
+      "src/mamba3_tracker/model/local_global_refiner.py": "715a35d4f55671b67b611d9f80d51ca20e2400c81c06024d2528d2da2beb5821",
+      "src/mamba3_tracker/model/compact_vssd.py": "b25912ef88a7ea1a4258d948799c9609342b789383671cbb40c1343061914c2a",
+      "src/mamba3_tracker/model/rep_temporal.py": "e686c12784d1b65ff6888015c0a5f5ea5180675ee911907184842f08244b11b3",
+      "src/mamba3_tracker/deployment/student_checkpoint.py": "271ec4893e47451c2c22c3e2d2a3b38fbe6cfb421fc1a9ad64197099c5d981c7",
+      "uv.lock": "259ade098c242f8b200cb907030ee76fa6bc9d85c91ffccc3b448647b02ae075",
+      "src/mamba3_tracker/model/official_mamba3.py": "a5bfb2566df87397885081bc11cd0eb0afc55666c0c1f769a30058cbb368dcc5",
+      "third_party/visionMamba3/src/visionmamba3/__init__.py": "0ff642f6fe7ca2aafca114c7dcf4004a8133fe07169d76ed8d9c8b4f7f18bdfc",
+      "third_party/visionMamba3/src/visionmamba3/projections.py": "06cf5cedb21c3b6efd04d7a5f1debb459e5f54c7cf74778040262721ba4b568a",
+      "third_party/visionMamba3/src/visionmamba3/mask.py": "a931e96aef4f845ab11dca04c86ddbcbe27de336a3cd48ebce9412c619ef52dc",
+      "third_party/visionMamba3/src/visionmamba3/cross_attention.py": "e36f393fc2bbd5a718d8b74d069b66b71d413a86e0e503d87d48519f5c0c8ca8",
+      "third_party/visionMamba3/third_party/mamba-ssm/mamba_ssm/modules/mamba3.py": "930c3dfa04dea8444b1c9ee8b6ac9cbbc7ef492dc5ae1f4c83051ef953eca33c",
+      "third_party/visionMamba3/third_party/mamba-ssm/mamba_ssm/ops/triton/layernorm_gated.py": "eb6252e247b90f1c8a75946efbc1a221e0c4da701b6757ddae49f3495cf7a42f",
+      "third_party/visionMamba3/third_party/mamba-ssm/mamba_ssm/ops/triton/mamba3/mamba3_siso_combined.py": "410ad57555b5841fba7bd76fdafdc3ddf82741176489c3e3493f5c6f3c0c6012",
+      "third_party/visionMamba3/third_party/mamba-ssm/mamba_ssm/ops/triton/mamba3/mamba3_siso_fwd.py": "bfcf75d9192e0f90ca543eb33a5b5f2b50d92ad2a60f2d5bfab1dc7081b4da33",
+      "third_party/visionMamba3/third_party/mamba-ssm/mamba_ssm/ops/triton/mamba3/mamba3_siso_bwd.py": "270639817bf8070c6b3f1fac229826c89344e38e8375e73e95249bf3087355de",
+      "third_party/visionMamba3/third_party/mamba-ssm/mamba_ssm/ops/triton/mamba3/angle_dt.py": "7d99f8cff37371cfbfe9d4dd36f17a16135fb07f2c6e14add3ad4dd5c0034e2e",
+      "third_party/visionMamba3/third_party/mamba-ssm/mamba_ssm/ops/triton/mamba3/utils.py": "9d93fd772c7f256f517e75445261773e469cfeddb8bb76c1f8f16e9feabb3c13"
+    },
+    "initialization_sha256": null,
+    "context": "exact_shape_no_padding_full_microbatch_z_ref"
+  },
+  "phase": "finetune",
+  "block_step": 100,
+  "ft_step": 200,
+  "block_processed": 3200,
+  "ft_processed": 6400,
+  "bad": 4,
+  "best_checkpoint": "/home/kasm-user/Desktop/vmamba3-3Dpointtracker/result/refiner_kd_improved_20261002/pilot_R2_fullcache_s42/student_step180.pt",
+  "snapshots": [
+    {
+      "step": 10,
+      "path": "/home/kasm-user/Desktop/vmamba3-3Dpointtracker/result/refiner_kd_improved_20261002/pilot_R2_fullcache_s42/student_step10.pt",
+      "sha256": "2e9c6c2c5071047ec59a914d3661551054b61df73db0b95768aa1a7a54dd97f7",
+      "monitor_gt_loss": 0.6391995932906867
+    },
+    {
+      "step": 20,
+      "path": "/home/kasm-user/Desktop/vmamba3-3Dpointtracker/result/refiner_kd_improved_20261002/pilot_R2_fullcache_s42/student_step20.pt",
+      "sha256": "36321c97950817c8f56087e3bd4a2656d8f39c9fb18ae677448fa0e8281eb47f",
+      "monitor_gt_loss": 0.5686237790932258
+    },
+    {
+      "step": 30,
+      "path": "/home/kasm-user/Desktop/vmamba3-3Dpointtracker/result/refiner_kd_improved_20261002/pilot_R2_fullcache_s42/student_step30.pt",
+      "sha256": "d528d7e0f03c4233303cc3db3c62387ee676c7b6970208f077071d93765d0f1c",
+      "monitor_gt_loss": 0.4579795567939679
+    },
+    {
+      "step": 40,
+      "path": "/home/kasm-user/Desktop/vmamba3-3Dpointtracker/result/refiner_kd_improved_20261002/pilot_R2_fullcache_s42/student_step40.pt",
+      "sha256": "0d8ca585638fa0b10fa914ab5d5d511a6fa604c473a427869d5c9d3166afda91",
+      "monitor_gt_loss": 0.39112342298030855
+    },
+    {
+      "step": 50,
+      "path": "/home/kasm-user/Desktop/vmamba3-3Dpointtracker/result/refiner_kd_improved_20261002/pilot_R2_fullcache_s42/student_step50.pt",
+      "sha256": "5b5fa6cfc865d159f9ce34278f556b04d66b0a3eea0a5def90b5ae5c5a495103",
+      "monitor_gt_loss": 0.3585505389918884
+    },
+    {
+      "step": 60,
+      "path": "/home/kasm-user/Desktop/vmamba3-3Dpointtracker/result/refiner_kd_improved_20261002/pilot_R2_fullcache_s42/student_step60.pt",
+      "sha256": "6889e2d5a04afa45263d1d770c31449d6c7f5af7d4d3601aff250116e92a1e83",
+      "monitor_gt_loss": 0.34715552665293214
+    },
+    {
+      "step": 70,
+      "path": "/home/kasm-user/Desktop/vmamba3-3Dpointtracker/result/refiner_kd_improved_20261002/pilot_R2_fullcache_s42/student_step70.pt",
+      "sha256": "956c181d6811a94e428debf1124864e732b5487271845ecd62918c3d05257331",
+      "monitor_gt_loss": 0.3393197833249966
+    },
+    {
+      "step": 80,
+      "path": "/home/kasm-user/Desktop/vmamba3-3Dpointtracker/result/refiner_kd_improved_20261002/pilot_R2_fullcache_s42/student_step80.pt",
+      "sha256": "34b0aeae7e82ec135662c8c2626e40ca8d068b311ccdae36b7e4e358a44e291e",
+      "monitor_gt_loss": 0.3436632896463076
+    },
+    {
+      "step": 90,
+      "path": "/home/kasm-user/Desktop/vmamba3-3Dpointtracker/result/refiner_kd_improved_20261002/pilot_R2_fullcache_s42/student_step90.pt",
+      "sha256": "79ce4f78fc3b6d799efac8efd8d363cefb4feb574005c3dd7e5e6965bf9d6f99",
+      "monitor_gt_loss": 0.33211599724988144
+    },
+    {
+      "step": 100,
+      "path": "/home/kasm-user/Desktop/vmamba3-3Dpointtracker/result/refiner_kd_improved_20261002/pilot_R2_fullcache_s42/student_step100.pt",
+      "sha256": "705b7612f7333393c98e7bb6c523ce5ffe1f9ec5fd32ae363d567b7f60385abb",
+      "monitor_gt_loss": 0.31788575189809004
+    },
+    {
+      "step": 110,
+      "path": "/home/kasm-user/Desktop/vmamba3-3Dpointtracker/result/refiner_kd_improved_20261002/pilot_R2_fullcache_s42/student_step110.pt",
+      "sha256": "1a26ed62fe4b597ec25c08407a974f54a8b94d29bf7104727433325da0823764",
+      "monitor_gt_loss": 0.3298817858099937
+    },
+    {
+      "step": 120,
+      "path": "/home/kasm-user/Desktop/vmamba3-3Dpointtracker/result/refiner_kd_improved_20261002/pilot_R2_fullcache_s42/student_step120.pt",
+      "sha256": "a27b2710b1b27d85e13e71e345fd06bc2baecdbce48b295a557f561cbc581354",
+      "monitor_gt_loss": 0.31243965091804665
+    },
+    {
+      "step": 130,
+      "path": "/home/kasm-user/Desktop/vmamba3-3Dpointtracker/result/refiner_kd_improved_20261002/pilot_R2_fullcache_s42/student_step130.pt",
+      "sha256": "61fb45190799b5fbfe92c142c8b62492efd4b9a61f5bed87d2bf02ffb58a7f70",
+      "monitor_gt_loss": 0.2959045180430015
+    },
+    {
+      "step": 140,
+      "path": "/home/kasm-user/Desktop/vmamba3-3Dpointtracker/result/refiner_kd_improved_20261002/pilot_R2_fullcache_s42/student_step140.pt",
+      "sha256": "7556a03cc876cdaf75a57abb7e43b83cbf74f4f50dac673979f14bc4649e88f9",
+      "monitor_gt_loss": 0.3234564300626516
+    },
+    {
+      "step": 150,
+      "path": "/home/kasm-user/Desktop/vmamba3-3Dpointtracker/result/refiner_kd_improved_20261002/pilot_R2_fullcache_s42/student_step150.pt",
+      "sha256": "18b5cdfb785003c7c53e7f46639e265c8ff879cefb838652c11c1a8de3a8d4ba",
+      "monitor_gt_loss": 0.3065584192673365
+    },
+    {
+      "step": 160,
+      "path": "/home/kasm-user/Desktop/vmamba3-3Dpointtracker/result/refiner_kd_improved_20261002/pilot_R2_fullcache_s42/student_step160.pt",
+      "sha256": "5809853acb380598b24e2df841110d9bc1a6b7021324d772435379ce38e382e7",
+      "monitor_gt_loss": 0.2930095716069142
+    },
+    {
+      "step": 170,
+      "path": "/home/kasm-user/Desktop/vmamba3-3Dpointtracker/result/refiner_kd_improved_20261002/pilot_R2_fullcache_s42/student_step170.pt",
+      "sha256": "b2252b26039e1c107077187c53891c9f1e61bd5e6ecaa2eedd129a58488d79c0",
+      "monitor_gt_loss": 0.29691836101313435
+    },
+    {
+      "step": 180,
+      "path": "/home/kasm-user/Desktop/vmamba3-3Dpointtracker/result/refiner_kd_improved_20261002/pilot_R2_fullcache_s42/student_step180.pt",
+      "sha256": "16ec743e3a46c00a7bffd77db83862a8037a09fbc8ecc52e586d3c1d60761ada",
+      "monitor_gt_loss": 0.29247785645226637
+    },
+    {
+      "step": 190,
+      "path": "/home/kasm-user/Desktop/vmamba3-3Dpointtracker/result/refiner_kd_improved_20261002/pilot_R2_fullcache_s42/student_step190.pt",
+      "sha256": "8fcca3b5079858827ad14f7d80868a339861861f8985bb5186cd54c5e1bccf37",
+      "monitor_gt_loss": 0.2980627893159787
+    },
+    {
+      "step": 200,
+      "path": "/home/kasm-user/Desktop/vmamba3-3Dpointtracker/result/refiner_kd_improved_20261002/pilot_R2_fullcache_s42/student_step200.pt",
+      "sha256": "a8007c94ec4225ef8b0bf3f97f619cd539f204de06e6800720bb72084493cd7f",
+      "monitor_gt_loss": 0.2944630100081364
+    }
+  ],
+  "alignment_evidence": {
+    "common_initial_sha256": "b534b8c5b0e769254c74778a1e74fb09433d42532bb6e9eab690f2ef88beafc1",
+    "common_unchanged": true,
+    "block_peak_vram_bytes": 8731514368
+  },
+  "initial_student_sha256": "b4db0e2eca0147382a15eba352868029ccfa1a787b183b94a6aa7df3e4c4ac50",
+  "initial_monitor_gt_loss": 0.5516102880239486,
+  "initial_fixed_train_probe": {
+    "gt": 0.19554264470934868,
+    "pos_3d": 0.2150782961398363,
+    "uv_reg": 0.00018608982645673677,
+    "total": 0.1966312061995268,
+    "residual": 0.001402437159413239,
+    "xyz": 0.00154939187632408,
+    "kd": 0.0010885665542446077,
+    "gate_rate": 0.7454249858856201,
+    "confidence_mean": 0.4767897352576256,
+    "teacher_normalized_error": 0.07119401264935732,
+    "student_normalized_error": 0.14290473237633705
+  },
+  "block_common_unchanged": true,
+  "step": 200,
+  "processed_clips": 6400,
+  "best_monitor_gt_loss": 0.29247785645226637,
+  "post_alignment_monitor_gt_loss": 0.6726534533624847,
+  "teacher_unchanged": true,
+  "exit_reason": "budget_complete",
+  "final_student_sha256": "e0343a7e3f7dbbb15fcd471781c7e67468a7d95943908ac769397bcace093318",
+  "finetune_peak_vram_bytes": 10903016960,
+  "block_peak_vram_bytes": 8731514368,
+  "peak_vram_bytes": 10903016960,
+  "elapsed_seconds": 740.5463694680075,
+  "final_fixed_train_probe": {
+    "gt": 0.11733762547373772,
+    "pos_3d": 0.12905950471758842,
+    "uv_reg": 0.00011880670172104146,
+    "total": 0.11776683665812016,
+    "residual": 0.0005990180106891785,
+    "xyz": 0.0005188079849176574,
+    "kd": 0.0004292110043024877,
+    "gate_rate": 0.5679681524634361,
+    "confidence_mean": 0.386833768337965,
+    "teacher_normalized_error": 0.07119401264935732,
+    "student_normalized_error": 0.08353538997471333
+  }
+}

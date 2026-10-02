@@ -218,6 +218,43 @@ the output directory's `README.md` and `reports/summary.json`. Outputs include
 per-clip snapshots. See the output README for measured scores and limitations.
 
 Only if new predictions are needed, first enable the native CUDA/Mamba-3 environment and make
+the pinned DINOv3 weights available for release inference as described below.
+
+#### Add the lightweight distilled refiner (four-column mode)
+
+Use `--mode with-student` with a **public student checkpoint** (`student_step*.pt`, not
+the training-resume `last.pt`). The default output is a separate Desktop directory,
+`../tracking_comparison_kd_20261002`; existing three-column videos are preserved.
+The fourth column is the student in CUDA FP32. All four methods share the exact DINO
+extraction, WAFT/DA3 inputs, queries and flow visibility; no GT is passed to inference.
+The checkpoint SHA256 and architecture are pinned in the new manifest, and switching
+models in an existing output directory is rejected. Use another `--out-dir` for another model.
+This mode does **not** check the student's ONNX parity or claim independent-test accuracy.
+
+For this session's validation-best lightweight model, run from the repository root in bash:
+
+```bash
+source scripts/cudnn_env.sh
+export HF_HUB_OFFLINE=1
+for subset in pstudio drivetrack adt; do
+  uv run --no-sync python scripts/demo_tracking_comparison.py \
+    --mode with-student \
+    --student-checkpoint result/refiner_kd_improved_20261002/pilot_R2_fullcache_s42/student_step180.pt \
+    --stage infer --subset "$subset" || exit "$?"
+done
+uv run --no-sync python scripts/demo_tracking_comparison.py --mode with-student --stage render
+uv run --no-sync python scripts/demo_tracking_comparison.py --mode with-student --stage audit
+```
+
+For a short DriveTrack-only demo, infer just `drivetrack` and add `--subset drivetrack`
+to both `render` and `audit`. Those two stages use saved predictions and need no GPU.
+Four-column videos are 2560×1080; default three-column videos remain 1920×1080.
+To use an existing prepared release bundle elsewhere, provide `--base-dir /path/to/bundle`
+when first supplying `--student-checkpoint`. Empty release bundles cannot bootstrap this demo.
+
+#### Recompute the original release predictions
+
+Only if new predictions are needed, first enable the native CUDA/Mamba-3 environment and make
 the pinned DINOv3 weights available (the gated model requires an authorized Hugging Face account
 if it is not already cached). The inference stage requires an explicit subset and replaces its
 saved predictions/report; run `render` and `audit` afterward:
