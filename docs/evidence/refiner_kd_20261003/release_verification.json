@@ -1,0 +1,33 @@
+{
+  "status": "passed",
+  "checkpoints": [
+    {
+      "filename": "refiner_kd_v2_selected_20261003_train.pt",
+      "parameters": 617374,
+      "architecture": "vssd_local_global_128x2_v2_train",
+      "model_sha256": "a799208040e554b1afa3453ba49661d1a022ba708daee4c5f8b6f4364b162000",
+      "public_schema_only": true
+    },
+    {
+      "filename": "refiner_kd_v2_selected_20261003.pt",
+      "parameters": 615838,
+      "architecture": "vssd_local_global_128x2_v2",
+      "model_sha256": "2e1d6227d9fb494a228929d3a8bad27195f0a01e436751ee083268f60aa14993",
+      "public_schema_only": true
+    }
+  ],
+  "onnx_checker_passed": true,
+  "onnx_string_fields_scanned": 3317,
+  "onnx_byte_equal_to_previous_release": true,
+  "text_and_model_metadata_privacy_scan_passed": true,
+  "cuda_initialized": false,
+  "excluded": [
+    "conversation_logs",
+    "raw_data",
+    "raw_training_logs",
+    "optimizer_rng_checkpoints",
+    "host_paths",
+    "credentials"
+  ],
+  "train_and_deploy_tensors_equal_to_previous_release": true
+}

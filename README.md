@@ -1,5 +1,7 @@
 # vmamba3-3Dpointtracker
 
+2026-10-03 lightweight-model update: [experiment findings and next steps](docs/diary/2026-10-03_refiner_kd_findings_and_next_steps.md). The evaluated fine-tuned candidates did not improve full-sequence absolute AJ; the original R2 best180 remains the selected experimental student.
+
 [![arXiv](https://img.shields.io/badge/arXiv-2609.34035-b31b1b.svg)](https://arxiv.org/abs/2609.34035)
 
 Metric 3D point tracking with a Mamba-3 state space model, on a single commodity GPU, monocular

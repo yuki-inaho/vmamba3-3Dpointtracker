@@ -1,0 +1,36 @@
+{
+  "schema_version": 1,
+  "date": "2026-10-03",
+  "release_tag": "mamba3-preview-20261001-step200",
+  "release_url": "https://github.com/yuki-inaho/vmamba3-3Dpointtracker/releases/tag/mamba3-preview-20261001-step200",
+  "selected_origin": "original_R2_best180",
+  "improved_over_original": false,
+  "weights_unchanged": true,
+  "assets": [
+    {
+      "filename": "refiner_kd_v2_selected_20261003_train.pt",
+      "sha256": "c49c1a9961054aae52106e192143393a944d3636d59d88f80af9ea839fba3327"
+    },
+    {
+      "filename": "refiner_kd_v2_selected_20261003.pt",
+      "sha256": "74f22a97d602435eb4ffb83088dc7920141ec9ce6529eff6147fe662e526b20d"
+    },
+    {
+      "filename": "refiner_kd_v2_selected_20261003.onnx",
+      "sha256": "7dc47ac5cd8d06e0c7e285ba88fce75ecc55df4d47b2a6d15535abb66bd162db"
+    },
+    {
+      "filename": "refiner_kd_v2_selected_20261003_metrics.json",
+      "sha256": "9dabc561a1280ede0ea77e23d9d5929cd2aeabaa92aedc1ce91566eef5808ef0"
+    },
+    {
+      "filename": "refiner_kd_v2_selected_20261003_MODEL_CARD.md",
+      "sha256": "92fdea469769362e037497bdc0706a6021cf002d00b4c48633b291f4c1da988a"
+    },
+    {
+      "filename": "refiner_kd_v2_selected_20261003_privacy_report.json",
+      "sha256": "06ea7ec5aaf3553cb3f6a0e2112391d0b57cf81e163e6fc568126fdb1e3fad8b"
+    }
+  ],
+  "checksum_asset": "refiner_kd_v2_selected_20261003_SHA256SUMS"
+}

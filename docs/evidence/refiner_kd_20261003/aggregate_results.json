@@ -1,0 +1,209 @@
+{
+  "schema_version": 1,
+  "recorded_date": "2026-10-03",
+  "experiment_id": "20261003T093842Z",
+  "metric_range": "0_to_1",
+  "scope": "known_monitor15_all_frames_all_queries_not_blind_test",
+  "workflow": {
+    "status": "complete",
+    "started_utc": "2026-10-03T09:41:11.962115+00:00",
+    "completed_utc": "2026-10-03T10:02:06.434267+00:00",
+    "method": "balanced_selective_teacher_better_gradient_direction_gate",
+    "exported_config_sha256": "4d501ccf21e76402336c707ea1f2469055818cc5d7531d18ed06113d76b3c981"
+  },
+  "training": {
+    "status": "complete",
+    "exit_reason": "early_stop",
+    "updates": 80,
+    "processed_clips": 2560,
+    "optimizer_phase_elapsed_seconds": 138.14829505607486,
+    "initial_monitor_gt_loss": 0.29258403728405635,
+    "best_monitor_gt_loss": 0.2708955489099026,
+    "teacher_unchanged": true
+  },
+  "models": {
+    "train_parameters": 617374,
+    "deploy_parameters": 615838
+  },
+  "short_window": {
+    "scope": "fixed16_known_monitor15_max256_queries_not_full_sequence_not_blind_test",
+    "selected_step": 40,
+    "entries": [
+      {
+        "step": 0,
+        "origin": "original_R2_best180",
+        "monitor_gt_loss": null,
+        "absolute_aj": 0.22860795471004114
+      },
+      {
+        "step": 10,
+        "origin": "fine_tuned",
+        "monitor_gt_loss": 0.2894066686431567,
+        "absolute_aj": 0.22882644741002167
+      },
+      {
+        "step": 20,
+        "origin": "fine_tuned",
+        "monitor_gt_loss": 0.27901157885789873,
+        "absolute_aj": 0.23197566280796858
+      },
+      {
+        "step": 30,
+        "origin": "fine_tuned",
+        "monitor_gt_loss": 0.2708955489099026,
+        "absolute_aj": 0.23496319535340507
+      },
+      {
+        "step": 40,
+        "origin": "fine_tuned",
+        "monitor_gt_loss": 0.2746309610704581,
+        "absolute_aj": 0.23538317953849036
+      },
+      {
+        "step": 50,
+        "origin": "fine_tuned",
+        "monitor_gt_loss": 0.27989841947952904,
+        "absolute_aj": 0.23383400114187533
+      },
+      {
+        "step": 60,
+        "origin": "fine_tuned",
+        "monitor_gt_loss": 0.2742762622733911,
+        "absolute_aj": 0.23517891585488618
+      },
+      {
+        "step": 70,
+        "origin": "fine_tuned",
+        "monitor_gt_loss": 0.2725628430644671,
+        "absolute_aj": 0.23389766253672237
+      },
+      {
+        "step": 80,
+        "origin": "fine_tuned",
+        "monitor_gt_loss": 0.2741048353413741,
+        "absolute_aj": 0.23471995424996386
+      }
+    ]
+  },
+  "full_sequence": {
+    "selected_step": 0,
+    "improved_over_original": false,
+    "teacher": {
+      "per_subset": {
+        "adt": {
+          "average_jaccard": 0.11689275062325,
+          "metric_average_jaccard": 0.2990159289939517
+        },
+        "drivetrack": {
+          "average_jaccard": 0.043448240235340885,
+          "metric_average_jaccard": 0.08457431449105464
+        },
+        "pstudio": {
+          "average_jaccard": 0.09917077784857628,
+          "metric_average_jaccard": 0.30057769598257666
+        }
+      },
+      "macro": {
+        "average_jaccard": 0.08650392290238906,
+        "metric_average_jaccard": 0.22805597982252768
+      }
+    },
+    "candidates": [
+      {
+        "step": 0,
+        "origin": "original_R2_best180",
+        "checkpoint_sha256": "16ec743e3a46c00a7bffd77db83862a8037a09fbc8ecc52e586d3c1d60761ada",
+        "student": {
+          "per_subset": {
+            "adt": {
+              "average_jaccard": 0.08440336043877342,
+              "metric_average_jaccard": 0.288747046351265
+            },
+            "drivetrack": {
+              "average_jaccard": 0.0566741482635504,
+              "metric_average_jaccard": 0.07369042257763263
+            },
+            "pstudio": {
+              "average_jaccard": 0.0985873303002924,
+              "metric_average_jaccard": 0.12829222845506372
+            }
+          },
+          "macro": {
+            "average_jaccard": 0.07988827966753874,
+            "metric_average_jaccard": 0.1635765657946538
+          }
+        }
+      },
+      {
+        "step": 40,
+        "origin": "fine_tuned",
+        "checkpoint_sha256": "9882ec35a5788ed0cf394fdfad00e3528894a999335d185a8218471d789e58b8",
+        "student": {
+          "per_subset": {
+            "adt": {
+              "average_jaccard": 0.09692734719688631,
+              "metric_average_jaccard": 0.28723276879022086
+            },
+            "drivetrack": {
+              "average_jaccard": 0.05683525704887429,
+              "metric_average_jaccard": 0.055181513574433
+            },
+            "pstudio": {
+              "average_jaccard": 0.09698397970488334,
+              "metric_average_jaccard": 0.14248307748106143
+            }
+          },
+          "macro": {
+            "average_jaccard": 0.08358219465021466,
+            "metric_average_jaccard": 0.1616324532819051
+          }
+        }
+      },
+      {
+        "step": 30,
+        "origin": "fine_tuned",
+        "checkpoint_sha256": "b99f86096d7d4815696e0c8b78cc8c5fa6e238d37c92d983f00c36698d6aec96",
+        "student": {
+          "per_subset": {
+            "adt": {
+              "average_jaccard": 0.09319373203769044,
+              "metric_average_jaccard": 0.2894316395403004
+            },
+            "drivetrack": {
+              "average_jaccard": 0.05687773938142661,
+              "metric_average_jaccard": 0.05606352504321055
+            },
+            "pstudio": {
+              "average_jaccard": 0.09755990527911798,
+              "metric_average_jaccard": 0.14077217151721938
+            }
+          },
+          "macro": {
+            "average_jaccard": 0.08254379223274501,
+            "metric_average_jaccard": 0.16208911203357676
+          }
+        }
+      }
+    ]
+  },
+  "privacy": {
+    "contents": "aggregate_metrics_and_model_hashes_only",
+    "excluded": [
+      "local_paths",
+      "conversation_logs",
+      "raw_training_logs",
+      "raw_data",
+      "credentials",
+      "optimizer_rng_checkpoints"
+    ]
+  },
+  "data_protocol": {
+    "train_clips": 64,
+    "validation_clips": 15,
+    "validation_clips_per_subset": 5,
+    "current_finetune_clip_overlap": 0,
+    "current_finetune_sequence_overlap": 0,
+    "independent_blind_test": false,
+    "training_window_frames": 16
+  }
+}
